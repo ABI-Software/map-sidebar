@@ -144,11 +144,28 @@ export default {
              return response.json()
           }
         })
-        .then((data) => {
+        .then((data) => { 
           this.thumbnail = data.banner
           this.discoverId = data.id
           this.version = data.version
           this.dataLocation = `https://sparc.science/datasets/${data.id}?type=dataset`
+
+          // Note this request is only temporary until scicrunch returns a discover id or latest version of datasets
+          fetch(`https://api.pennsieve.io/discover/datasets/${data.id}`)
+            .then((response) =>{
+              if (!response.ok){
+                throw Error(response.statusText)
+              } else {
+                return response.json()
+              }
+            })
+            .then(data=>{
+              this.thumbnail = data.banner
+              this.discoverId = data.id
+              this.version = data.version
+              this.dataLocation = `https://sparc.science/datasets/${data.id}?type=dataset`
+            })
+            
         })
         .catch(() => {
           //set defaults if we hit an error
