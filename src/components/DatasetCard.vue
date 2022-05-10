@@ -2,7 +2,7 @@
   <div class="dataset-card-container"  ref="container">
     <div v-bind:class=" expanded ? 'dataset-card-expanded' : 'dataset-card'"  ref="card">
       <div v-if="entry.id !== 0" class="seperator-path"></div>
-      <div v-loading="loading" class="card" >
+      <div class="card" >
         <span class="card-left">
           <img svg-inline class="banner-img" :src="thumbnail" @click="openDataset"/>
         </span>
@@ -61,10 +61,7 @@ export default {
      * Object containing information for
      * the required viewing.
      */
-    entry: {
-      type: Object,
-      default: () => {}
-    },
+    entry: Object,
     envVars: {
       type: Object,
       default: () => {}
@@ -76,9 +73,7 @@ export default {
       dataLocation: this.entry.doi,
       discoverId: undefined,
       cardOverflow: false,
-      expanded: false,
-      loading: false,
-      lastDoi: undefined,
+      expanded: false
     };
   },
   computed: {
@@ -245,34 +240,26 @@ export default {
       return [doi.split('/')[doi.split('/').length-2], doi.split('/')[doi.split('/').length-1]]
     },
     getBanner: function () {
-      // Only load banner if card has changed
-      if (this.lastDoi !== this.entry.doi) {
-        this.lastDoi = this.entry.doi
-        this.loading = true
-        let doi = this.splitDOI(this.entry.doi)
-        fetch(`https://api.pennsieve.io/discover/datasets/doi/${doi[0]}/${doi[1]}`)
-          .then((response) =>{
-            if (!response.ok){
-              throw Error(response.statusText)
-            } else {
-              return response.json()
-            }
-          })
-          .then((data) => {
-            this.thumbnail = data.banner
-            this.discoverId = data.id
-            this.version = data.version
-            this.dataLocation = `https://sparc.science/datasets/${data.id}?type=dataset`
-            this.loading = false
-          })
-          .catch(() => {
-            //set defaults if we hit an error
-            this.thumbnail = require('@/../assets/missing-image.svg')
-            this.discoverId = undefined
-            this.loading = false
-          });
-      }
-
+      let doi = this.splitDOI(this.entry.doi)
+      fetch(`https://api.pennsieve.io/discover/datasets/doi/${doi[0]}/${doi[1]}`)
+        .then((response) =>{
+          if (!response.ok){
+            throw Error(response.statusText)
+          } else {
+             return response.json()
+          }
+        })
+        .then((data) => {
+          this.thumbnail = data.banner
+          this.discoverId = data.id
+          this.version = data.version
+          this.dataLocation = `https://sparc.science/datasets/${data.id}?type=dataset`
+        })
+        .catch(() => {
+          //set defaults if we hit an error
+          this.thumbnail = require('@/../assets/missing-image.svg')
+          this.discoverId = undefined
+        });
     },
     lastName: function(fullName){
       return fullName.split(',')[0]
@@ -285,11 +272,11 @@ export default {
   updated: function () {
   },
   watch: {
-    // currently not using card overflow
     'entry.description': function() { // watch it
       this.cardOverflow = false
       this.expanded = false
       this.cardOverflow = this.isOverflown(this.$refs.card)
+      this.getBanner()
     }
   },
 };
