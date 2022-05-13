@@ -152,7 +152,7 @@ export default {
           banner: this.thumbnail
         }
         if (hardcoded_info[this.discoverId]){
-          action.contextCardUrl = true
+          action.contextCardUrl = Math.random()
         }
         this.propogateCardAction(action)
     },

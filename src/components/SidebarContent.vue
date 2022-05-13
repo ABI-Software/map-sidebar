@@ -160,10 +160,12 @@ export default {
       this.searchInput = search;
       this.resetPageNavigation();
       this.searchAlgolia(filters, search);
-      filters.forEach(filter=>{
-        this.filter = [...filter];
-        this.$refs.filtersRef.setCascader(this.filter);
-      })
+      if(filters) {
+        filters.forEach(filter=>{
+          this.filter = [...filter];
+          this.$refs.filtersRef.setCascader(this.filter);
+        })
+      }
     },
     addFilter: function(filter) {
       this.resetPageNavigation();

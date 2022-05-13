@@ -11,7 +11,7 @@
           <div class="title">{{contextData.heading}}</div>
           <div>{{contextData.description}}</div>
           <br/>
-          <div v-if="contextData.views" class="subtitle">Scaffold Views</div>
+          <div v-if="contextData.views && contextData.views.length > 0" class="subtitle">Scaffold Views</div>
           <template v-for="(view, i) in contextData.views">
             <span v-bind:key="i+'_1'" @click="openViewFile(view)" class="context-card-item">
               <img class="key-image" :src="getFileFromPath(view.thumbnail)"> 
@@ -84,7 +84,7 @@ export default {
       handler(val){
         if (val) {
           // used for hardcoding data
-          if (val === true){
+          if ( Number.isFinite(val) ){
             this.contextData = hardcoded_info[this.entry.discoverId]
           } else {
             this.getContextFile(val)
@@ -110,7 +110,6 @@ export default {
         })
         .then((data) => {
           this.contextData = data
-          console.log(data)
           this.loading = false
         })
         .catch(() => {
@@ -136,7 +135,7 @@ export default {
     },
     getFileFromPath: function(path){
       // for hardcoded data
-      if(this.entry.contextCardUrl === true){
+      if(this.entry.contextCardUrl && 1 > this.entry.contextCardUrl > 0){
         return path
       }
       path = this.removeDoubleFilesPath(path)
@@ -186,10 +185,13 @@ export default {
   padding: 0px;
   display: flex;
   width: 516px;   
+  max-height: 480px;
+  overflow-y: scroll !important;
+  scrollbar-width: thin;
 }
 
 .context-image{
-  width: 250px;
+  width: 230px;
   height: auto;
 }
 
@@ -207,7 +209,6 @@ export default {
   border: solid 1px #e4e7ed;
   display: flex;
   width: 500px;
-  max-height: 480px;
 }
 
 .card-left{
@@ -236,5 +237,23 @@ export default {
 
 .subtitle{
   font-weight: bold;
+}
+
+/* Custom scroll bar */
+.context-card >>> .el-card__body::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background-color: #f5f5f5;
+}
+
+.context-card >>> .el-card__body::-webkit-scrollbar {
+  width: 12px;
+  right: -12px;
+  background-color: #f5f5f5;
+}
+
+.context-card >>> .el-card__body::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  background-color: #979797;
 }
 </style>
