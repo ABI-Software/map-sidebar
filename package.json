@@ -1,6 +1,6 @@
 {
   "name": "@abi-software/map-side-bar",
-  "version": "1.2.3",
+  "version": "1.2.3-hardcoded-1",
   "main": "./dist/map-side-bar.common.js",
   "files": [
     "dist/*",
