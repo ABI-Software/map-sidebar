@@ -156,14 +156,14 @@ export default {
     contextCardUpdate: function(val){
         this.contextCardEntry = val
     },
-    openSearch: function(filter, search='') {
+    openSearch: function(filters, search='') {
       this.searchInput = search;
       this.resetPageNavigation();
-      this.searchAlgolia(filter, search);
-      if (filter) {
+      this.searchAlgolia(filters, search);
+      filters.forEach(filter=>{
         this.filter = [...filter];
         this.$refs.filtersRef.setCascader(this.filter);
-      }
+      })
     },
     addFilter: function(filter) {
       this.resetPageNavigation();
