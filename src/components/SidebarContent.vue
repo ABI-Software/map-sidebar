@@ -1,14 +1,15 @@
 <template>
   <el-card :body-style="bodyStyle" class="content-card">
     <div slot="header" class="header">
-      <el-input
+      <el-autocomplete
         class="search-input"
         placeholder="Search"
+        :fetch-suggestions="fetchSuggestions"
         v-model="searchInput"
         @keyup.native="searchEvent"
         clearable
         @clear="clearSearchClicked"
-      ></el-input>
+      ></el-autocomplete>
       <el-button class="button" @click="searchEvent">Search</el-button>
     </div>
     <SearchFilters
@@ -58,6 +59,7 @@ import {
   Input,
   Loading,
   Pagination,
+  Autocomplete
 } from "element-ui";
 import lang from "element-ui/lib/locale/lang/en";
 import locale from "element-ui/lib/locale";
@@ -77,6 +79,7 @@ Vue.use(Icon);
 Vue.use(Input);
 Vue.use(Loading);
 Vue.use(Pagination);
+Vue.use(Autocomplete);
 
 // handleErrors: A custom fetch error handler to recieve messages from the server
 //    even when an error is found
@@ -217,6 +220,14 @@ export default {
         this.searchAlgolia(this.filters, this.searchInput);
         this.$refs.searchHistory.selectValue = 'Full search history'
         this.$refs.searchHistory.addSearchToHistory(this.filters, this.searchInput);
+      }
+    },
+    fetchSuggestions: function (queryString, callback) {
+      if (queryString.length > 0) {
+        console.log(this.$refs.searchHistory.reversedSearchHistory.map(item => item.search))
+        callback(this.$refs.searchHistory.reversedSearchHistory.map(item => ({value: item.search, label: item.search})))
+      } else {
+        callback([]);
       }
     },
     filterUpdate: function (filters) {
