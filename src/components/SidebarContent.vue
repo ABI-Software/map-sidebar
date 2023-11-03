@@ -224,8 +224,18 @@ export default {
     },
     fetchSuggestions: function (queryString, callback) {
       if (queryString.length > 0) {
-        console.log(this.$refs.searchHistory.reversedSearchHistory.map(item => item.search))
-        callback(this.$refs.searchHistory.reversedSearchHistory.map(item => ({value: item.search, label: item.search})))
+        this.algoliaClient
+          .search(getFilters(this.filters), queryString, 10, 1)
+          .then((searchData) => {
+            callback(
+              searchData.items.map((item) => {
+                return {
+                  value: item.name,
+                  label: item.name,
+                };
+              })
+            );
+          });
       } else {
         callback([]);
       }
