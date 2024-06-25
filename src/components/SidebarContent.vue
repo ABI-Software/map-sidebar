@@ -41,9 +41,9 @@
       <div v-for="result in results" :key="result.doi" class="step-item">
         <DatasetCard
           class="dataset-card"
-          :entry="result" 
-          :envVars="envVars" 
-          @mouseenter="hoverChanged(result)" 
+          :entry="result"
+          :envVars="envVars"
+          @mouseenter="hoverChanged(result)"
           @mouseleave="hoverChanged(undefined)"
         />
       </div>
@@ -458,10 +458,27 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.dataset-card:hover {
-  border-style: solid;
-  border-color: var(--el-color-primary);
-  border-radius: 5px;
+.dataset-card {
+  position: relative;
+
+  &::before {
+    content: "";
+    display: block;
+    width: calc(100% - 15px);
+    height: 100%;
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    border-style: solid;
+    border-radius: 5px;
+    border-color: transparent;
+  }
+
+  &:hover {
+    &::before {
+      border-color: var(--el-color-primary);
+    }
+  }
 }
 
 .content-card {

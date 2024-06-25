@@ -264,7 +264,8 @@ export default {
 
 <style lang="scss" scoped>
 .dataset-card {
-  padding-left: 15px;
+  padding-left: 5px;
+  padding-right: 5px;
   position: relative;
   min-height: 17rem;
 }

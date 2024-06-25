@@ -4,15 +4,17 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css?family=Asap:400,400i,500,600,700&display=swap"
     />
-    Click arrow to open sidebar
-    <el-button @click="openSearch">search Uberon from refs</el-button>
-    <el-button @click="singleFacets">Add heart to Filter</el-button>
-    <el-button @click="addStomach">Add stomach to Filter</el-button>
-    <el-button @click="addInvalidTerm">Add invalid term to Filter</el-button>
-    <el-button @click="multiFacets">multiple facets</el-button>
-    <el-button @click="neuronSearch">open neuron search</el-button>
-    <el-button @click="keywordSearch">keyword search</el-button>
-    <el-button @click="getFacets">Get facets</el-button>
+    <div class="options-container">
+      <div>Click arrow to open sidebar</div>
+      <el-button @click="openSearch">search Uberon from refs</el-button>
+      <el-button @click="singleFacets">Add heart to Filter</el-button>
+      <el-button @click="addStomach">Add stomach to Filter</el-button>
+      <el-button @click="addInvalidTerm">Add invalid term to Filter</el-button>
+      <el-button @click="multiFacets">multiple facets</el-button>
+      <el-button @click="neuronSearch">open neuron search</el-button>
+      <el-button @click="keywordSearch">keyword search</el-button>
+      <el-button @click="getFacets">Get facets</el-button>
+    </div>
     <SideBar
       :envVars="envVars"
       class="side-bar"
@@ -229,5 +231,17 @@ body {
 }
 .map-icon {
   color: $app-primary-color;
+}
+.options-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% - 600px);
+  padding: 1rem;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 </style>
