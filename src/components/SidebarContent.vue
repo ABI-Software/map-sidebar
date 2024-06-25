@@ -10,14 +10,19 @@
           clearable
           @clear="clearSearchClicked"
         ></el-input>
-        <el-button
-          type="primary"
-          class="button"
-          @click="searchEvent"
-          size="large"
+        <el-select
+          v-model="mode"
+          class="data-type-select"
+          placeholder="Search over..."
+          @change="onSelectValueChange"
         >
-          Search
-        </el-button>
+          <el-option
+            v-for="item in selectOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
       </div>
     </template>
     <SearchFilters
@@ -38,15 +43,30 @@
       <div class="error-feedback" v-if="results.length === 0 && !loadingCards">
         No results found - Please change your search / filter criteria.
       </div>
-      <div v-for="result in results" :key="result.doi" class="step-item">
-        <DatasetCard
-          class="dataset-card"
-          :entry="result" 
-          :envVars="envVars" 
-          @mouseenter="hoverChanged(result)" 
-          @mouseleave="hoverChanged(undefined)"
-        />
-      </div>
+      <template v-if="mode == 'Sparc Datasets'">
+        <div v-for="result in results" :key="result.doi" class="step-item">
+          <DatasetCard
+            :entry="result"
+            :envVars="envVars"
+          ></DatasetCard>
+        </div>
+      </template>
+      <template v-if="mode == 'PMR'">
+        <div v-for="(result, i) in pmrResults" :key="i" class="step-item">
+          <PMRDatasetCard
+            :entry="result"
+            :envVars="envVars"
+          ></PMRDatasetCard>
+        </div>
+      </template>
+      <template v-if="mode == 'Flatmap'">
+        <div v-for="(result, i) in allPaths" :key="i" class="step-item">
+          <flatmap-dataset-card
+            :entry="result"
+            :envVars="envVars"
+          ></flatmap-dataset-card>
+        </div>
+      </template>
       <el-pagination
         class="pagination"
         v-model:current-page="page"
@@ -73,11 +93,20 @@ import {
 } from 'element-plus'
 import SearchFilters from './SearchFilters.vue'
 import SearchHistory from './SearchHistory.vue'
-import DatasetCard from './DatasetCard.vue'
 import EventBus from './EventBus.js'
+
+import DatasetCard from "./DatasetCard.vue";
+import PMRDatasetCard from "./PMRDatasetCard.vue";
+import FlatmapDatasetCard from './FlatmapDatasetCard.vue';
+
+import allPaths from './allPaths.js'
 
 import { AlgoliaClient } from '../algolia/algolia.js'
 import { getFilters, facetPropPathMapping } from '../algolia/utils.js'
+import FlatmapQueries from '../flatmapQueries/flatmapQueries.js'
+
+// TODO: to update API URL
+const API_URL = "/data/pmr-sample.json";
 
 // handleErrors: A custom fetch error handler to recieve messages from the server
 //    even when an error is found
@@ -106,12 +135,24 @@ var initial_state = {
   start: 0,
   hasSearched: false,
   contextCardEnabled: false,
-}
+  pmrResults: [],
+  mode: 'Sparc Datasets',
+  allPaths: allPaths.values,
+  selectOptions: [
+    { value: "Sparc Datasets", label: "Sparc Datasets" },
+    { value: "PMR", label: "PMR" },
+    { value: "Flatmap", label: "Flatmap"}
+  ],
+};
+
+
 
 export default {
   components: {
     SearchFilters,
     DatasetCard,
+    PMRDatasetCard,
+    FlatmapDatasetCard,
     SearchHistory,
     Button,
     Card,
@@ -170,7 +211,24 @@ export default {
       this.results = []
       this.loadingCards = false
     },
-    openSearch: function (filter, search = '') {
+    // openSearch: Resets the results, populates dataset cards and filters. Will use Algolia and SciCrunch data uness pmr mode is set
+    openSearch: function(filter, search = '', mode = 'Sparc Datasets') {
+      if (!mode || mode === 'Sparc Datasets') {
+        this.openAlgoliaSearch(filter, search)
+      } else if (mode === 'PMR') {
+        this.openPMRSearch(filter, search)
+      } 
+    },
+
+    // openPMRSearch: Resets the results, populates dataset cards and filters with PMR data.
+    openPMRSearch: function (filter, search = '') {
+      this.flatmapQueries.pmrSearch(search).then((data) => {
+        this.pmrResults = data
+      })
+    },
+
+    // openAlgoliaSearch: Resets the results, populates dataset cards and filters with Algloia and SciCrunch data.
+    openAlgoliaSearch: function (filter, search = '') {
       this.searchInput = search
       this.resetPageNavigation()
       //Proceed normally if cascader is ready
@@ -282,6 +340,7 @@ export default {
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val
+      this.flatmapQueries.updateNumberPerPage(this.numberPerPage)
       this.pageChange(1)
     },
     pageChange: function (page) {
@@ -293,6 +352,10 @@ export default {
         this.numberPerPage,
         this.page
       )
+      this.flatmapQueries.updatePage(this.page)
+      if (this.mode === 'PMR') {
+        this.openPMRSearch(this.filter, this.search)
+      }
     },
     handleMissingData: function (doi) {
       let i = this.results.findIndex((res) => res.doi === doi)
@@ -439,6 +502,10 @@ export default {
       this.filters = item.filters
       this.openSearch(item.filters, item.search)
     },
+    onSelectValueChange: function (val) {
+      this.mode = val
+      this.openSearch(this.filter, this.searchInput, val)
+    },
   },
   mounted: function () {
     // initialise algolia
@@ -448,7 +515,13 @@ export default {
       this.envVars.PENNSIEVE_API_LOCATION
     )
     this.algoliaClient.initIndex(this.envVars.ALGOLIA_INDEX)
-    this.openSearch(this.filter, this.searchInput)
+
+    // initialise flatmap queries
+    this.flatmapQueries = new FlatmapQueries()
+    this.flatmapQueries.initialise(this.envVars.FLATMAP_API_LOCATION)
+
+    // open search
+    this.openSearch(this.filter, this.searchInput, this.mode )
   },
   created: function () {
     //Create non-reactive local variables
@@ -468,6 +541,17 @@ export default {
   height: 100%;
   flex-flow: column;
   display: flex;
+}
+
+.data-type-select {
+  width: 90px;
+  margin-left: 10px;
+}
+
+.button {
+  background-color: $app-primary-color;
+  border: $app-primary-color;
+  color: white;
 }
 
 .step-item {
