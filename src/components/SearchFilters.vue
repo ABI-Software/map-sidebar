@@ -793,10 +793,14 @@ export default {
 
 <style lang="scss" scoped>
 
+.filters {
+  position: relative;
+}
+
 .cascader-tag {
   position: absolute;
-  top: 110px;
-  left: 50px;
+  top: 8px;
+  left: 8px;
   z-index: 1;
   display: flex;
   gap: 4px;

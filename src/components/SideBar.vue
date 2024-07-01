@@ -22,12 +22,22 @@
         </div>
         <div class="sidebar-container">
           <Tabs
-            v-if="tabs.length > 1"
+            v-if="tabs.length > 1 && connectivityInfo"
             :tabTitles="tabs"
             :activeId="activeId"
             @titleClicked="tabClicked"
+            @tab-close="tabClose"
           />
           <template v-for="tab in tabs" key="tab.id">
+            <!-- Connectivity Info -->
+            <template v-if="tab.id === 2">
+              <connectivity-info
+                :entry="connectivityInfo"
+                v-show="tab.id === activeId"
+                :ref="tab.id"
+              />
+            </template>
+            <template v-else>
             <SidebarContent
               class="sidebar-content-container"
               v-show="tab.id === activeId"
@@ -37,6 +47,7 @@
               @search-changed="searchChanged(tab.id, $event)"
               @hover-changed="hoverChanged($event)"
             />
+            </template>
           </template>
         </div>
       </div>
@@ -54,6 +65,7 @@ import { ElDrawer as Drawer, ElIcon as Icon } from 'element-plus'
 import SidebarContent from './SidebarContent.vue'
 import EventBus from './EventBus.js'
 import Tabs from './Tabs.vue'
+import ConnectivityInfo from './ConnectivityInfo.vue'
 
 /**
  * Aims to provide a sidebar for searching capability for SPARC portal.
@@ -65,7 +77,8 @@ export default {
     ElIconArrowLeft,
     ElIconArrowRight,
     Drawer,
-    Icon
+    Icon,
+    ConnectivityInfo,
   },
   name: 'SideBar',
   props: {
@@ -91,7 +104,10 @@ export default {
      */
     tabs: {
       type: Array,
-      default: () => [{ title: 'flatmap', id: 1 }],
+      default: () => [
+        { title: 'Search', id: 1 },
+        { title: 'Connectivity', id: 2 }
+      ],
     },
     /**
      * The active tab id for default tab.
@@ -106,6 +122,13 @@ export default {
     openAtStart: {
       type: Boolean,
       default: false,
+    },
+    /**
+     * The connectivity info data to show in sidebar.
+     */
+    connectivityInfo: {
+      type: Object,
+      default: null,
     },
   },
   data: function () {
@@ -146,7 +169,8 @@ export default {
       this.drawerOpen = true
       // Because refs are in v-for, nextTick is needed here
       this.$nextTick(() => {
-        this.$refs[this.activeId][0].openSearch(facets, query)
+        // TODO: refs[1] is for `search` which should be renamed
+        this.$refs[1][0].openSearch(facets, query)
       })
     },
     /**
@@ -193,6 +217,9 @@ export default {
        */
       this.$emit('tabClicked', id)
     },
+    tabClose: function (id) {
+      this.$emit('connectivity-info-close');
+    },
   },
   created: function () {
     this.drawerOpen = this.openAtStart
@@ -219,7 +246,7 @@ export default {
        */
       this.$emit('anatomy-in-datasets', payLoad)
     })
-    
+
     EventBus.on('contextUpdate', (payLoad) => {
       /**
        * This event is emitted when the context card is updated.
@@ -236,6 +263,10 @@ export default {
        * @arg payload
        */
       this.$emit('datalink-clicked', payLoad);
+    })
+    EventBus.on('onConnectivityActionClick', (payLoad) => {
+      this.tabClicked(1);
+      this.$emit('actionClick', payLoad);
     })
   },
 }
@@ -269,6 +300,9 @@ export default {
   height: 100%;
   flex-flow: column;
   display: flex;
+  background-color: white;
+  box-shadow: var(--el-box-shadow-light);
+  border-radius: var(--el-card-border-radius);
 }
 
 .open-tab {
@@ -326,6 +360,12 @@ export default {
 
 .sidebar-content-container {
   flex: 1 1 auto;
+
+  .tab-container ~ & {
+    border-radius: 0;
+    border: 0 none;
+    position: relative;
+  }
 }
 </style>
 

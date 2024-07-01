@@ -41,9 +41,9 @@
       <div v-for="result in results" :key="result.doi" class="step-item">
         <DatasetCard
           class="dataset-card"
-          :entry="result" 
-          :envVars="envVars" 
-          @mouseenter="hoverChanged(result)" 
+          :entry="result"
+          :envVars="envVars"
+          @mouseenter="hoverChanged(result)"
           @mouseleave="hoverChanged(undefined)"
         />
       </div>
@@ -487,6 +487,15 @@ export default {
   border: solid 1px #292b66;
   background-color: #292b66;
   text-align: left;
+
+  .el-button {
+    &:hover,
+    &:focus {
+      background: $app-primary-color;
+      box-shadow: -3px 2px 4px #00000040;
+      color: #fff;
+    }
+  }
 }
 
 .pagination {
@@ -515,16 +524,17 @@ export default {
 
 .content-card :deep(.el-card__header) {
   background-color: #292b66;
-  border: solid 1px #292b66;
+  padding: 1rem;
 }
 
 .content-card :deep(.el-card__body) {
   background-color: #f7faff;
   overflow-y: hidden;
+  padding: 1rem;
 }
 
 .content {
-  width: 515px;
+  // width: 515px;
   flex: 1 1 auto;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.06);
   border: solid 1px #e4e7ed;

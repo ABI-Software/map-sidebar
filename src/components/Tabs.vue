@@ -1,6 +1,11 @@
 <template>
   <div class="tab-container">
-    <div class="title" v-for="title in tabTitles" :key="title.id">
+    <div
+      class="title"
+      v-for="title in tabTitles"
+      :key="title.id"
+      :class="{ 'active-tab': title.id == activeId }"
+    >
       <div
         class="title-text-table"
         v-bind:class="{ highlightText: title.id == activeId }"
@@ -10,6 +15,15 @@
           {{ title.title }}
         </div>
       </div>
+      <el-button
+        v-if="title.id === 2"
+        @click="tabClose(title.id)"
+        class="button-tab-close"
+        aria-label="Close"
+      >
+        &times;
+        <span class="visually-hidden">Close</span>
+      </el-button>
     </div>
   </div>
 </template>
@@ -33,25 +47,31 @@ export default {
     titleClicked: function (id) {
       this.$emit('titleClicked', id)
     },
+    tabClose: function (id) {
+      this.$emit('tab-close', id);
+    },
   },
 }
 </script>
 
 <style lang="scss" scoped>
+$tab-height: 30px;
+
 .tab-container {
-  height: 28px;
+  height: $tab-height;
+  display: flex;
+  flex-direction: row;
 }
 
 .title {
-  width: 101px;
-  height: 28px;
-  border: solid 1px $lineColor1;
-  border-bottom: none;
+  height: $tab-height;
+  border: 1px solid var(--el-border-color);
+  border-top-color: transparent;
   background-color: white;
-  display: inline-block;
-}
-
-.title:hover {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  position: relative;
   cursor: pointer;
 }
 
@@ -60,6 +80,7 @@ export default {
   display: table-cell;
   vertical-align: middle;
   font-size: 14px;
+  padding: 0 1rem;
 }
 
 .title-text-table {
@@ -72,7 +93,53 @@ export default {
   color: $app-primary-color;
 }
 
+.title:hover,
+.active-tab {
+  background-color: #f9f2fc;
+  border: solid #8300bf;
+  border-width: 1px 1px .125em;
+  color: #8300bf;
+  font-weight: 500;
+}
+
 .highlightText {
   color: $app-primary-color;
+}
+
+.button-tab-close {
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  padding: 0;
+  padding-right: 4px;
+  font-size: 24px;
+  color: $app-primary-color;
+  border: 0 none;
+  box-shadow: none;
+  outline: none;
+  background-color: transparent;
+
+  :deep(> span) {
+    height: $tab-height - 2; // tab height minus border
+    font-family: Arial; // to fix font alignment on different browsers
+  }
+
+  &:hover,
+  &:focus {
+    border: 0 none;
+    outline: none;
+    box-shadow: none;
+    background-color: transparent;
+  }
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 </style>
