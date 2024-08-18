@@ -35,7 +35,7 @@
         <div class="block" v-else>
           <div class="title">{{ entry.featureId }}</div>
         </div>
-        <external-resource-card :resources="resources"></external-resource-card>
+        <external-resource-card v-if="resources.length" :resources="resources"></external-resource-card>
       </div>
       <div class="title-buttons">
         <el-popover
