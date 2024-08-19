@@ -6,6 +6,7 @@
     />
     <div class="options-container">
       <div>Click arrow to open sidebar</div>
+      <el-button @click="openPMRSearch">PMR Search</el-button>
       <el-button @click="openSearch">search Uberon from refs</el-button>
       <el-button @click="singleFacets">Add heart to Filter</el-button>
       <el-button @click="addStomach">Add stomach to Filter</el-button>
@@ -23,6 +24,7 @@
       :tabs="tabs"
       :activeTabId="activeId"
       :connectivityInfo="connectivityInput"
+      :withPMRData="true"
       @tabClicked="tabClicked"
       @search-changed="searchChanged($event)"
       @hover-changed="hoverChanged($event)"
@@ -112,6 +114,7 @@ export default {
         BL_SERVER_URL: import.meta.env.VITE_APP_BL_SERVER_URL,
         NL_LINK_PREFIX: import.meta.env.VITE_APP_NL_LINK_PREFIX,
         ROOT_URL: import.meta.env.VITE_APP_ROOT_URL,
+        FLATMAP_API_LOCATION: import.meta.env.VITE_APP_FLATMAP_API_LOCATION,
       },
       connectivityInput: exampleConnectivityInput,
       activeId: 1,
@@ -130,6 +133,9 @@ export default {
     // For connectivity input actions
     action: function (action) {
       console.log('action fired: ', action)
+      if (action.type === 'Flatmap' || action.type === 'Simulation') {
+        return;
+      }
       let facets = [];
       facets.push(
         ...action.labels.map(val => ({
@@ -142,6 +148,18 @@ export default {
         console.log('openSearch', facets)
         this.$refs.sideBar.openSearch(facets, "");
       }
+    },
+    openPMRSearch: function () {
+      this.$refs.sideBar.openSearch(
+        [
+          {
+            facet: "PMR",
+            term: "Data type",
+            facetPropPath: "item.types.name",
+          }
+        ],
+        'cardiovascular multiscale model'
+      );
     },
     openSearch: function () {
       this.$refs.sideBar.openSearch(

@@ -45,7 +45,7 @@ export class AlgoliaClient {
               }
               if (facet === info[0]) {
                 filtered.push({
-                  label: info[1], 
+                  label: info[1],
                   id: facetId++,
                   facetPropPath: `${parentFacet ? parentFacet.facetSubpropPath : undefined}`
                 });
@@ -100,6 +100,7 @@ export class AlgoliaClient {
     for (let res of results) {
       newResult = { ...res }
       newResult = {
+        dataSource: 'SPARC',
         anatomy: res.anatomy ? res.anatomy.organ.map((organ => organ.curie)) : undefined,
         doi: res.item.curie.split(':')[1],
         name: res.item.name,
@@ -152,35 +153,47 @@ export class AlgoliaClient {
    * Get Search results
    * This is using fetch from the Algolia API
    */
-  search(filter, query = '', hitsperPage = 10, page = 1) {
-    return new Promise(resolve => {
-      this.index
-        .search(query, {
-          facets: ['*'],
-          hitsPerPage: hitsperPage,
-          page: page - 1,
-          filters: filter,
-          attributesToHighlight: [],
-          attributesToRetrieve: [
-            'pennsieve.publishDate',
-            'pennsieve.updatedAt',
-            'item.curie',
-            'item.name',
-            'item.description',
-            'objectID',
-            'anatomy.organ.curie'
-          ],
+  search(filter, query = '', offset = 0, length = 8) {
+    // If the length is 0, return an empty result
+    if (length === 0) {
+      return new Promise(resolve => {
+        resolve({
+          items: [],
+          total: 0,
+          discoverIds: [],
+          dois: []
         })
-        .then(response => {
-          let searchData = {
-            items: this._processResultsForCards(response.hits),
-            total: response.nbHits,
-            discoverIds: response.hits.map(r => r.pennsieve ? r.pennsieve.identifier : r.objectID),
-            dois: response.hits.map(r => r.item.curie.split(':')[1])
-          }
-          resolve(searchData)
-        })
-    })
+      })
+    } else {
+      return new Promise(resolve => {
+        this.index
+          .search(query, {
+            facets: ['*'],
+            offset: offset,
+            length: length,
+            filters: filter,
+            attributesToHighlight: [],
+            attributesToRetrieve: [
+              'pennsieve.publishDate',
+              'pennsieve.updatedAt',
+              'item.curie',
+              'item.name',
+              'item.description',
+              'objectID',
+              'anatomy.organ.curie'
+            ],
+          })
+          .then(response => {
+            let searchData = {
+              items: this._processResultsForCards(response.hits),
+              total: response.nbHits,
+              discoverIds: response.hits.map(r => r.pennsieve ? r.pennsieve.identifier : r.objectID),
+              dois: response.hits.map(r => r.item.curie.split(':')[1])
+            }
+            resolve(searchData)
+          })
+      })
+    }
   }
 
   /**
@@ -219,7 +232,7 @@ export class AlgoliaClient {
       id: h.objectID,
       terms: h.anatomy? h.anatomy.organ.map(o=>o.curie) : []
     }))
-    return curieForDatsets 
+    return curieForDatsets
   }
   processResultsForScaffold(hits) {
     let numberOfDatasetsForAnatomy = {}

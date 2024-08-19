@@ -24,6 +24,7 @@
       class="filters"
       ref="filtersRef"
       :entry="filterEntry"
+      :withPMRData="withPMRData"
       :envVars="envVars"
       @filterResults="filterUpdate"
       @numberPerPage="numberPerPageUpdate"
@@ -38,14 +39,24 @@
       <div class="error-feedback" v-if="results.length === 0 && !loadingCards">
         No results found - Please change your search / filter criteria.
       </div>
-      <div v-for="result in results" :key="result.doi" class="step-item">
+      <div v-for="(result, i) in results" :key="result.doi || result.sha" class="step-item">
         <DatasetCard
+          v-if="result.dataSource === 'SPARC'"
           class="dataset-card"
           :entry="result"
           :envVars="envVars"
           @mouseenter="hoverChanged(result)"
           @mouseleave="hoverChanged(undefined)"
-        />
+        ></DatasetCard>
+        <PMRDatasetCard
+          v-else-if="result.dataSource === 'PMR'"
+          class="dataset-card"
+          :entry="result"
+          :envVars="envVars"
+          @pmr-action-click="onPmrActionClick"
+          @mouseenter="hoverChanged(result)"
+          @mouseleave="hoverChanged(undefined)"
+        ></PMRDatasetCard>
       </div>
       <el-pagination
         class="pagination"
@@ -73,12 +84,18 @@ import {
 } from 'element-plus'
 import SearchFilters from './SearchFilters.vue'
 import SearchHistory from './SearchHistory.vue'
-import DatasetCard from './DatasetCard.vue'
 import EventBus from './EventBus.js'
+
+import DatasetCard from "./DatasetCard.vue";
+import PMRDatasetCard from "./PMRDatasetCard.vue";
 
 import { AlgoliaClient } from '../algolia/algolia.js'
 import { getFilters, facetPropPathMapping } from '../algolia/utils.js'
+import FlatmapQueries from '../flatmapQueries/flatmapQueries.js'
+import mixedPageCalculation from '../mixins/mixedPageCalculation.vue'
 import { markRaw } from 'vue'
+
+const RatioOfPMRResults = 0.2; // Ratio of PMR results to Sparc results
 
 // handleErrors: A custom fetch error handler to recieve messages from the server
 //    even when an error is found
@@ -98,21 +115,28 @@ var initial_state = {
   searchInput: '',
   lastSearch: '',
   results: [],
-  numberOfHits: 0,
+  algoliaResults: [],
+  pmrResults: [],
+  pmrNumberOfHits: 0,
+  sparcNumberOfHits: 0,
   filter: [],
   loadingCards: false,
   numberPerPage: 10,
   page: 1,
-  pageModel: 1,
-  start: 0,
+  pmrResultsFlag: false,
+  sparcResultsFlag: false,
   hasSearched: false,
   contextCardEnabled: false,
-}
+  RatioOfPMRResults: RatioOfPMRResults,
+};
+
+
 
 export default {
   components: {
     SearchFilters,
     DatasetCard,
+    PMRDatasetCard,
     SearchHistory,
     Button,
     Card,
@@ -122,6 +146,7 @@ export default {
     Pagination
   },
   name: 'SideBarContent',
+  mixins: [mixedPageCalculation],
   props: {
     visible: {
       type: Boolean,
@@ -135,14 +160,26 @@ export default {
       type: Object,
       default: () => initial_state,
     },
+    initFilters: {
+      type: Object,
+      default: {
+        filter: [],
+        searchInput: '',
+      }
+    },
     envVars: {
       type: Object,
       default: () => {},
+    },
+    withPMRData: {
+      type: Boolean,
+      default: false,
     },
   },
   data: function () {
     return {
       ...this.entry,
+      ...this.initFilters,
       algoliaClient: undefined,
       bodyStyle: {
         flex: '1 1 auto',
@@ -157,24 +194,95 @@ export default {
     filterEntry: function () {
       return {
         numberOfHits: this.numberOfHits,
+        pmrNumberOfHits: this.pmrNumberOfHits,
+        sparcNumberOfHits: this.sparcNumberOfHits,
         filterFacets: this.filter,
       }
     },
+    // npp_SPARC: Number per page for SPARC datasets
+    npp_SPARC: function () {
+      const ratioNumber = Math.round(this.numberPerPage * (1 - RatioOfPMRResults));
+      const numberPerPage = this.sparcResultsFlag ? this.numberPerPage : ratioNumber;
+      return numberPerPage;
+    },
+    // npp_PMR: Number per page for PMR datasets
+    npp_PMR: function () {
+      const ratioNumber = Math.round(this.numberPerPage * RatioOfPMRResults);
+      const numberPerPage = this.pmrResultsFlag ? this.numberPerPage : ratioNumber;
+      return numberPerPage;
+    },
+    numberOfHits: function () {
+      return this.sparcNumberOfHits + this.pmrNumberOfHits
+    },
+
   },
   methods: {
     hoverChanged: function (data) {
       this.$emit('hover-changed', data)
     },
+    onPmrActionClick: function (data) {
+      this.$emit('pmr-action-click', data);
+    },
+    // resetSearch: Resets the results, and page, and variable results ratio
+    //     Does not: reset filters, search input, or search history
     resetSearch: function () {
-      this.numberOfHits = 0
+      this.pmrNumberOfHits = 0
+      this.sparcNumberOfHits = 0
+      this.page = 1
+      this.calculateVariableRatio()
       this.discoverIds = []
       this._dois = []
       this.results = []
+      this.algoliaResults = []
+      this.pmrResults = []
       this.loadingCards = false
     },
-    openSearch: function (filter, search = '') {
+    // openSearch: Resets the results, populates dataset cards and filters.
+    // Will use Algolia and SciCrunch data uness pmr mode is set in PMR flag.
+    openSearch: function(filter, search = '', resetSearch = true) {
+      this.updatePMRAndSPARCResultsFlags(filter);
+
+      if (resetSearch) {
+        this.resetSearch();
+        this.openFilterSearch(filter, search);
+      } else {
+        this.handleAllSearch(filter, search);
+      }
+    },
+    handleAllSearch: function (filter, search) {
+      if (this.pmrResultsFlag) {
+        this.openPMRSearch(filter, search);
+      }
+      else if (this.sparcResultsFlag) {
+        this.searchAlgolia(filter, search);
+      }
+      else {
+        this.searchAlgolia(filter, search);
+        this.openPMRSearch(filter, search);
+      }
+    },
+    // openPMRSearch: Resets the results, populates dataset cards and filters with PMR data.
+    openPMRSearch: function (filter, search = '') {
+      this.loadingCards = true;
+      this.flatmapQueries.updateOffset(this.calculatePMROffest())
+      this.flatmapQueries.updateLimit(this.PMRLimit(this.pmrResultsFlag))
+      this.flatmapQueries.pmrSearch(filter, search).then((data) => {
+        // clear the existing results for concurrent requests
+        this.results = [];
+        this.pmrResults = [];
+        data.forEach((result) => {
+          this.pmrResults.push(result);
+        });
+        this.results = [...this.algoliaResults, ...this.pmrResults];
+        this.pmrNumberOfHits = this.flatmapQueries.numberOfHits
+        this.loadingCards = false;
+      })
+    },
+
+    // previously openAlgoliaSearch:
+    // Resets the results, populates dataset cards and filters with Algloia and SciCrunch data.
+    openFilterSearch: function (filter, search = '') {
       this.searchInput = search
-      this.resetPageNavigation()
       //Proceed normally if cascader is ready
       if (this.cascaderIsReady) {
         this.filter =
@@ -191,7 +299,7 @@ export default {
           this.$refs.filtersRef.checkShowAllBoxes()
           this.resetSearch()
         } else if (this.filter) {
-          this.searchAlgolia(this.filter, search)
+          this.handleAllSearch(this.filter, search);
           this.$refs.filtersRef.setCascader(this.filter)
         }
       } else {
@@ -199,13 +307,13 @@ export default {
         //otherwise waith for cascader to be ready
         this.filter = filter
         if (!filter || filter.length == 0) {
-          this.searchAlgolia(this.filter, search)
+          this.handleAllSearch(this.filter, search);
         }
       }
     },
     addFilter: function (filter) {
       if (this.cascaderIsReady) {
-        this.resetPageNavigation()
+        this.resetSearch()
         if (filter) {
           if (this.$refs.filtersRef.addFilter(filter))
             this.$refs.filtersRef.initiateSearch()
@@ -224,31 +332,64 @@ export default {
     },
     clearSearchClicked: function () {
       this.searchInput = ''
-      this.resetPageNavigation()
-      this.searchAlgolia(this.filters, this.searchInput)
+      this.resetSearch()
+      this.openSearch(this.filter, this.searchInput)
       this.$refs.searchHistory.selectValue = 'Full search history'
     },
     searchEvent: function (event = false) {
       if (event.keyCode === 13 || event instanceof MouseEvent) {
-        this.resetPageNavigation()
-        this.searchAlgolia(this.filters, this.searchInput)
+        this.openSearch(this.filter, this.searchInput)
         this.$refs.searchHistory.selectValue = 'Full search history'
         this.$refs.searchHistory.addSearchToHistory(
-          this.filters,
+          this.filter,
           this.searchInput
         )
       }
     },
+    updatePMRAndSPARCResultsFlags: function (filters) {
+      this.pmrResultsFlag = false;
+      this.sparcResultsFlag = false;
+
+      if (!this.withPMRData) {
+        this.sparcResultsFlag = true;
+        return;
+      }
+
+      const dataTypeFilters = filters.filter((item) => item.facetPropPath === 'item.types.name');
+      const pmrFilter = dataTypeFilters.filter((item) => item.facet === 'PMR');
+      const showAllFilter = dataTypeFilters.filter((item) => item.facet === 'Show all');
+
+      if (dataTypeFilters.length === 1 && pmrFilter.length === 1) {
+        this.pmrResultsFlag = true;
+      }
+
+      if (dataTypeFilters.length > 0 && pmrFilter.length === 0 && showAllFilter.length === 0) {
+        this.sparcResultsFlag = true;
+      }
+    },
     filterUpdate: function (filters) {
-      this.filters = [...filters]
-      this.resetPageNavigation()
-      this.searchAlgolia(filters, this.searchInput)
+      this.filter = [...filters]
+
+      // Check if PMR is in the filters
+      this.updatePMRAndSPARCResultsFlags(filters)
+
+      // Note that we cannot use the openSearch function as that modifies filters
+      this.resetSearch()
+      this.handleAllSearch(filters, this.searchInput);
+
       this.$emit('search-changed', {
         value: filters,
         type: 'filter-update',
       })
     },
     searchAlgolia(filters, query = '') {
+
+      // Remove loading if we dont expect any results
+      if (this.SPARCLimit() === 0) {
+        this.loadingCards = false
+        return
+      }
+
       // Algolia search
 
       this.loadingCards = true
@@ -260,12 +401,21 @@ export default {
           EventBus.emit('number-of-datasets-for-anatomies', r.forScaffold)
         })
       this.algoliaClient
-        .search(getFilters(filters), query, this.numberPerPage, this.page)
+        .search(getFilters(filters), query, this.calculateSPARCOffest(), this.SPARCLimit(this.pmrResultsFlag))
         .then((searchData) => {
-          this.numberOfHits = searchData.total
+          this.sparcNumberOfHits = searchData.total
           this.discoverIds = searchData.discoverIds
           this._dois = searchData.dois
-          this.results = searchData.items
+          // clear the existing results for concurrent requests
+          this.results = [];
+          this.algoliaResults = [];
+          searchData.items.forEach((item) => {
+            item.detailsReady = false
+            this.algoliaResults.push(item);
+          });
+          this.results = [...this.algoliaResults, ...this.pmrResults];
+          // add the items to the results
+          this.results.concat(searchData.items)
           this.loadingCards = false
           this.scrollToTop()
           this.$emit('search-changed', {
@@ -287,14 +437,10 @@ export default {
       this.pageChange(1)
     },
     pageChange: function (page) {
-      this.start = (page - 1) * this.numberPerPage
       this.page = page
-      this.searchAlgolia(
-        this.filters,
-        this.searchInput,
-        this.numberPerPage,
-        this.page
-      )
+      this.results = []
+      this.calculateVariableRatio()
+      this.openSearch(this.filter, this.searchInput, false)
     },
     handleMissingData: function (doi) {
       let i = this.results.findIndex((res) => res.doi === doi)
@@ -336,7 +482,6 @@ export default {
       }
     },
     resetPageNavigation: function () {
-      this.start = 0
       this.page = 1
     },
     resultsProcessing: function (data) {
@@ -437,9 +582,8 @@ export default {
       return facets
     },
     searchHistorySearch: function (item) {
-      this.searchInput = item.search
-      this.filters = item.filters
-      this.openSearch(item.filters, item.search)
+      this.searchInput = item.search;
+      this.openSearch(this.filter, item.search);
     },
   },
   mounted: function () {
@@ -450,7 +594,15 @@ export default {
       this.envVars.PENNSIEVE_API_LOCATION
     ))
     this.algoliaClient.initIndex(this.envVars.ALGOLIA_INDEX)
-    this.openSearch(this.filter, this.searchInput)
+
+    // initialise flatmap queries
+    if (this.withPMRData) {
+      this.flatmapQueries = new FlatmapQueries();
+      this.flatmapQueries.initialise(this.envVars.FLATMAP_API_LOCATION);
+    }
+
+    // open search
+    this.openSearch(this.filter, this.searchInput);
   },
   created: function () {
     //Create non-reactive local variables
@@ -460,7 +612,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.dataset-card {
+.dataset-card-container {
   position: relative;
 
   &::before {
@@ -487,6 +639,17 @@ export default {
   height: 100%;
   flex-flow: column;
   display: flex;
+}
+
+.data-type-select {
+  width: 90px;
+  margin-left: 10px;
+}
+
+.button {
+  background-color: $app-primary-color;
+  border: $app-primary-color;
+  color: white;
 }
 
 .step-item {

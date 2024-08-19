@@ -60,8 +60,13 @@ export function getFilters(selectedFacetArray=undefined) {
     return 'NOT item.published.status:embargo'
   }
 
-  // Switch the 'term' attribute to 'label' if 'label' does not exist 
-  selectedFacetArray.forEach(f=>f.label=f.facet)
+  // Switch the 'term' attribute to 'label' if 'label' does not exist. Use facet2 if available
+  selectedFacetArray.forEach(f=>{
+    f.label=f.facet
+    if (f.facet2) {
+      f.label = f.facet2
+    }
+  })
   
 
   let facets = removeShowAllFacets(selectedFacetArray)

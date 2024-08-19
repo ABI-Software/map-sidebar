@@ -45,7 +45,10 @@
               v-show="tab.id === activeTabId"
               :contextCardEntry="tab.contextCard"
               :envVars="envVars"
+              :initFilters="initFilters"
+              :withPMRData="withPMRData"
               :ref="'searchTab_' + tab.id"
+              @pmr-action-click="onPmrActionClick"
               @search-changed="searchChanged(tab.id, $event)"
               @hover-changed="hoverChanged($event)"
             />
@@ -95,10 +98,11 @@ export default {
      * The environment variables object with
      * `API_LOCATION`, `ALGOLIA_KEY`, `ALGOLIA_ID`,
      * `ALGOLIA_INDEX`, `PENNSIEVE_API_LOCATION`, `BL_SERVER_URL`,
-     * `NL_LINK_PREFIX`, `ROOT_URL`
+     * `NL_LINK_PREFIX`, `ROOT_URL`, and `FLATMAP_API_LOCATION` _(for PMR flatmap query)_
      */
     envVars: {
       type: Object,
+      required: true,
       default: () => {},
     },
     /**
@@ -132,10 +136,19 @@ export default {
       type: Object,
       default: null,
     },
+    /**
+     * The option to show PMR results from flatmap API
+     * together with existing Algolia results.
+     */
+    withPMRData: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: function () {
     return {
       drawerOpen: false,
+      initFilters: { filter: [], searchInput: '' },
       availableAnatomyFacets: []
     }
   },
@@ -176,7 +189,22 @@ export default {
       this.drawerOpen = !this.drawerOpen
     },
     openSearch: function (facets, query) {
-      this.drawerOpen = true
+      this.initFilters.filter = facets;
+      this.initFilters.searchInput = query;
+      this.drawerOpen = true;
+
+      // Warning for PMR search when withPMRData flag is not enabled.
+      const foundPMRFacet = facets.filter((facet) => facet.facet === 'PMR');
+      if (foundPMRFacet.length && !this.withPMRData) {
+        const warningText = [
+          "Warning:",
+          "Found PMR facet in search filter but withPMRData flag is not enabled.",
+          "No PMR result will be shown!",
+          "Set withPMRData = true to see PMR results."
+        ];
+        console.warn(warningText.join('\n'));
+      }
+
       // Because refs are in v-for, nextTick is needed here
       this.$nextTick(() => {
         const searchTabRef = this.getSearchTabRefById(1);
@@ -245,6 +273,9 @@ export default {
     },
     setDrawerOpen: function (value = true) {
       this.drawerOpen = value
+    },
+    onPmrActionClick: function (payload) {
+      this.$emit('actionClick', payload);
     },
     /**
      * @vuese
