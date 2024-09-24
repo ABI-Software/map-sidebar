@@ -2,7 +2,7 @@
   <div class="tab-container">
     <div
       class="title"
-      v-for="title in tabTitles"
+      v-for="title in titles"
       :key="title.id"
       :class="{ 'active-tab': title.id == activeId }"
     >
@@ -16,7 +16,7 @@
         </div>
       </div>
       <el-button
-        v-if="title.id === 2"
+        v-if="title.type === 'connectivity' || title.type === 'images'"
         @click="tabClose(title.id)"
         class="button-tab-close"
         aria-label="Close"
@@ -41,6 +41,25 @@ export default {
     activeId: {
       type: Number,
       default: 1,
+    },
+    hasConnectivityInfo: {
+      type: Boolean,
+      default: true,
+    },
+    hasImageThumbnails: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  computed: {
+    titles: function() {
+      if (!this.hasConnectivityInfo) {
+        return this.tabTitles.filter((tab) => tab.type !== 'connectivity');
+      }
+      else if (!this.hasImageThumbnails) {
+        return this.tabTitles.filter((tab) => tab.type !== 'images');
+      }
+      return this.tabTitles;
     },
   },
   methods: {
@@ -73,6 +92,7 @@ $tab-height: 30px;
   align-items: center;
   position: relative;
   cursor: pointer;
+  z-index: 2;
 }
 
 .title-text {

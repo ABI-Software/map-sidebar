@@ -22,9 +22,11 @@
         </div>
         <div class="sidebar-container">
           <Tabs
-            v-if="tabs.length > 1 && connectivityInfo"
+            v-if="tabs.length > 1 && (connectivityInfo || imageThumbnails.length)"
             :tabTitles="tabs"
             :activeId="activeTabId"
+            :hasConnectivityInfo="!!connectivityInfo"
+            :hasImageThumbnails="!!imageThumbnails.length"
             @titleClicked="tabClicked"
             @tab-close="tabClose"
           />
@@ -39,8 +41,24 @@
                 @show-connectivity="showConnectivity"
               />
             </template>
+            <template v-else-if="tab.type === 'images'">
+              <ImageThumbnails
+                v-if="imageThumbnails.length"
+                v-show="tab.id === activeTabId"
+                :envVars="envVars"
+                :imageThumbnails="imageThumbnails"
+              />
+            </template>
             <template v-else>
+            <ImageThumbnails
+              v-if="imageThumbnails.length && searchType === 'images'"
+              v-show="tab.id === activeTabId"
+              :envVars="envVars"
+              :imageThumbnails="imageThumbnails"
+              @update-search-type="onUpdateSearchType"
+            />
             <SidebarContent
+              v-if="searchType !== 'images'"
               class="sidebar-content-container"
               v-show="tab.id === activeTabId"
               :contextCardEntry="tab.contextCard"
@@ -68,6 +86,7 @@ import SidebarContent from './SidebarContent.vue'
 import EventBus from './EventBus.js'
 import Tabs from './Tabs.vue'
 import ConnectivityInfo from './ConnectivityInfo.vue'
+import ImageThumbnails from './ImageThumbnails.vue'
 
 /**
  * Aims to provide a sidebar for searching capability for SPARC portal.
@@ -81,6 +100,7 @@ export default {
     Drawer,
     Icon,
     ConnectivityInfo,
+    ImageThumbnails,
   },
   name: 'SideBar',
   props: {
@@ -108,7 +128,8 @@ export default {
       type: Array,
       default: () => [
         { id: 1, title: 'Search', type: 'search' },
-        { id: 2, title: 'Connectivity', type: 'connectivity' }
+        { id: 2, title: 'Connectivity', type: 'connectivity' },
+        // { id: 3, title: 'Images', type: 'images' }, // Temporary
       ],
     },
     /**
@@ -132,10 +153,18 @@ export default {
       type: Object,
       default: null,
     },
+    /**
+     * The image thumbnails data to show in sidebar.
+     */
+     imageThumbnails: {
+      type: Array,
+      default: [],
+    },
   },
   data: function () {
     return {
       drawerOpen: false,
+      searchType: '',
       availableAnatomyFacets: []
     }
   },
@@ -260,7 +289,15 @@ export default {
       this.$emit('tabClicked', {id, type});
     },
     tabClose: function (id) {
-      this.$emit('connectivity-info-close');
+      const closedTab = this.tabs.find((tab) => tab.id === id);
+      if (closedTab.type === 'connectivity') {
+        this.$emit('connectivity-info-close');
+      } else if (closedTab.type === 'images') {
+        this.$emit('image-thumbnail-close');
+      }
+    },
+    onUpdateSearchType: function () {
+      this.searchType = '';
     },
   },
   created: function () {

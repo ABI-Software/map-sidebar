@@ -14,6 +14,7 @@
       <el-button @click="neuronSearch">open neuron search</el-button>
       <el-button @click="keywordSearch">keyword search</el-button>
       <el-button @click="getFacets">Get facets</el-button>
+      <el-button @click="showImages">Show Images</el-button>
     </div>
     <SideBar
       :envVars="envVars"
@@ -23,10 +24,13 @@
       :tabs="tabs"
       :activeTabId="activeId"
       :connectivityInfo="connectivityInput"
+      :imageThumbnails="imageThumbnails"
       @tabClicked="tabClicked"
       @search-changed="searchChanged($event)"
       @hover-changed="hoverChanged($event)"
       @actionClick="action"
+      @connectivity-info-close="onConnectivityInfoClose"
+      @image-thumbnail-close="onImageThumbnailClose"
     />
   </div>
 </template>
@@ -37,6 +41,7 @@
 import SideBar from './components/SideBar.vue'
 import EventBus from './components/EventBus.js'
 import exampleConnectivityInput from './exampleConnectivityInput.js'
+import imageThumbnails from './data/images.json';
 
 const capitalise = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -101,7 +106,11 @@ export default {
   data: function () {
     return {
       contextArray: [null, null],
-      tabArray: [{ title: 'Flatmap', id: 1, type: 'search'}, { title: 'Connectivity', id: 2, type: 'connectivity' }],
+      tabArray: [
+        { title: 'Flatmap', id: 1, type: 'search'},
+        { title: 'Connectivity', id: 2, type: 'connectivity' },
+        // { title: 'Images', id: 3, type: 'images' },
+      ],
       sideBarVisibility: true,
       envVars: {
         API_LOCATION: import.meta.env.VITE_APP_API_LOCATION,
@@ -114,6 +123,7 @@ export default {
         ROOT_URL: import.meta.env.VITE_APP_ROOT_URL,
       },
       connectivityInput: exampleConnectivityInput,
+      imageThumbnails: imageThumbnails,
       activeId: 1,
     }
   },
@@ -223,6 +233,19 @@ export default {
     getFacets: async function () {
       let facets = await this.$refs.sideBar.getAlgoliaFacets()
       console.log('Algolia facets:', facets)
+    },
+    showImages: function () {
+      if (this.$refs.sideBar) {
+        // this.tabClicked({id: 1, type: 'images'});
+        this.$refs.sideBar.searchType = 'images';
+        this.$refs.sideBar.setDrawerOpen(true);
+      }
+    },
+    onConnectivityInfoClose: function () {
+      console.log('connectivity-info-close');
+    },
+    onImageThumbnailClose: function () {
+      console.log('image-thumbnail-close');
     },
   },
   mounted: function () {
