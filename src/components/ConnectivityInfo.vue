@@ -83,9 +83,15 @@
           class="attribute-content"
           :origin-item-label="origin"
           :key="origin"
+          @mouseenter="toggleConnectivityTooltip(origin, true)"
+          @mouseleave="toggleConnectivityTooltip(origin, false)"
         >
           {{ capitalise(origin) }}
-          <div v-if="i != entry.origins.length - 1" class="seperator"></div>
+          <!-- <el-checkbox
+            :label="capitalise(origin)"
+            size="small"
+            @change="toggleConnectivityHighlight"
+          /> -->
         </div>
         <el-button
           v-show="
@@ -111,12 +117,15 @@
           class="attribute-content"
           :component-item-label="component"
           :key="component"
+          @mouseenter="toggleConnectivityTooltip(component, true)"
+          @mouseleave="toggleConnectivityTooltip(component, false)"
         >
           {{ capitalise(component) }}
-          <div
-            v-if="i != entry.components.length - 1"
-            class="seperator"
-          ></div>
+          <!-- <el-checkbox
+            :label="capitalise(component)"
+            size="small"
+            @change="toggleConnectivityHighlight"
+          /> -->
         </div>
       </div>
       <div
@@ -144,12 +153,15 @@
           class="attribute-content"
           :destination-item-label="destination"
           :key="destination"
+          @mouseenter="toggleConnectivityTooltip(destination, true)"
+          @mouseleave="toggleConnectivityTooltip(destination, false)"
         >
           {{ capitalise(destination) }}
-          <div
-            v-if="i != entry.destinations.length - 1"
-            class="seperator"
-          ></div>
+          <!-- <el-checkbox
+            :label="capitalise(destination)"
+            size="small"
+            @change="toggleConnectivityHighlight"
+          /> -->
         </div>
         <el-button
           v-show="
@@ -446,6 +458,25 @@ export default {
 
       return contentArray.join('\n\n<br>');
     },
+    toggleConnectivityTooltip: function (name, option) {
+      const allWithDatasets = [
+        ...this.entry.componentsWithDatasets,
+        ...this.entry.destinationsWithDatasets,
+        ...this.entry.originsWithDatasets,
+      ];
+      const names = name.split(','); // some features have more than one value
+      const data = [];
+      if (option) {
+        names.forEach((n) => {
+          data.push(allWithDatasets.find((a) => a.name.trim() === n.trim()));
+        });
+      }
+      this.$emit('connectivity-component-click', data);
+    },
+    // TODO: to keep the connection on the flatmap when the checkbox is ticked.
+    // toggleConnectivityHighlight: function (value) {
+    //   // value = true/false
+    // },
   },
 }
 </script>
@@ -547,12 +578,6 @@ export default {
   }
 }
 
-.seperator {
-  width: 90%;
-  height: 1px;
-  background-color: #bfbec2;
-}
-
 .hide {
   color: $app-primary-color;
   cursor: pointer;
@@ -601,10 +626,46 @@ export default {
 .attribute-content {
   font-size: 14px;
   font-weight: 500;
+  transition: color 0.25s ease;
+  cursor: default;
+
+  &:hover {
+    color: $app-primary-color;
+  }
+
+  + .attribute-content {
+    position: relative;
+
+    &::before {
+      content: "";
+      width: 90%;
+      height: 1px;
+      background-color: var(--el-border-color);
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  }
 
   &:last-of-type {
     margin-bottom: 0.5em;
   }
+
+  // TODO: if we have checkboxes
+  // :deep(.el-checkbox),
+  // :deep(.el-checkbox.el-checkbox--small .el-checkbox__label) {
+  //   font-size: inherit;
+  //   font-weight: inherit;
+  //   color: inherit;
+  // }
+
+  // :deep(.el-checkbox) {
+  //   gap: 8px;
+  // }
+
+  // :deep(.el-checkbox.el-checkbox--small .el-checkbox__label) {
+  //   padding: 0;
+  // }
 }
 
 .popover-container {
