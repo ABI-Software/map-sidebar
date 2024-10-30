@@ -14,6 +14,7 @@
       <el-button @click="neuronSearch">open neuron search</el-button>
       <el-button @click="keywordSearch">keyword search</el-button>
       <el-button @click="getFacets">Get facets</el-button>
+      <el-button @click="toggleCreateData">Create Data/Annotation</el-button>
     </div>
     <SideBar
       :envVars="envVars"
@@ -22,6 +23,8 @@
       :visible="sideBarVisibility"
       :tabs="tabs"
       :activeTabId="activeId"
+      :annotationEntry="annotationEntry"
+      :createData="createData"
       :connectivityInfo="connectivityInput"
       @tabClicked="tabClicked"
       @search-changed="searchChanged($event)"
@@ -100,8 +103,16 @@ export default {
   },
   data: function () {
     return {
+      annotationEntry: {
+        featureId :"epicardium",
+        resourceId: "https://mapcore-bucket1.s3-us-west-2.amazonaws.com/others/29_Jan_2020/heartICN_metadata.json","resource":"https://mapcore-bucket1.s3-us-west-2.amazonaws.com/others/29_Jan_2020/heartICN_metadata.json"
+      },
       contextArray: [null, null],
-      tabArray: [{ title: 'Flatmap', id: 1, type: 'search'}, { title: 'Connectivity', id: 2, type: 'connectivity' }],
+      tabArray: [
+        { title: 'Flatmap', id: 1, type: 'search'},
+        { title: 'Connectivity', id: 2, type: 'connectivity' },
+        { title: 'Annotation', id: 3, type: 'annotation' },
+      ],
       sideBarVisibility: true,
       envVars: {
         API_LOCATION: import.meta.env.VITE_APP_API_LOCATION,
@@ -115,6 +126,7 @@ export default {
       },
       connectivityInput: exampleConnectivityInput,
       activeId: 1,
+      createData: null,
     }
   },
   methods: {
@@ -224,6 +236,23 @@ export default {
       let facets = await this.$refs.sideBar.getAlgoliaFacets()
       console.log('Algolia facets:', facets)
     },
+    toggleCreateData : function() {
+      if (!this.createData) {
+        this.createData = {
+          drawingBox: false,
+          toBeConfirmed: true,
+          points: [[1.0, 1.0, 1.0]],
+          shape: "Lines",
+          x: 0,
+          y: 0,
+          editingIndex: -1,
+          faceIndex: -1,
+          toBeDeleted: false,
+        }
+      } else {
+        this.createData = null
+      }
+    }
   },
   mounted: function () {
     console.log('mounted app')
