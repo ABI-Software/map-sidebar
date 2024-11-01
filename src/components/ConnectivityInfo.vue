@@ -35,7 +35,17 @@
         <div class="block" v-else>
           <div class="title">{{ entry.featureId }}</div>
         </div>
-        <external-resource-card :resources="resources"></external-resource-card>
+        <div class="block" v-if="resources.length">
+          <external-resource-card :resources="resources"></external-resource-card>
+        </div>
+        <div class="block">
+          <el-button
+            class="button"
+            @click="goToConnectivityGraph()"
+          >
+            Show connectivity graph
+          </el-button>
+        </div>
       </div>
       <div class="title-buttons">
         <el-popover
@@ -58,7 +68,7 @@
         <CopyToClipboard :content="updatedCopyContent" />
       </div>
     </div>
-    <div class="content-container scrollbar">
+    <div class="content-container">
       {{ entry.paths }}
       <div v-if="entry.origins && entry.origins.length > 0" class="block">
         <div class="attribute-title-container">
@@ -163,18 +173,32 @@
           Explore destination data
         </el-button>
       </div>
-
-      <el-button
+      <div
         v-show="
           entry.componentsWithDatasets &&
           entry.componentsWithDatasets.length > 0 &&
           shouldShowExploreButton(entry.componentsWithDatasets)
         "
-        class="button"
-        @click="openAll"
+        class="block"
       >
-        Search for data on components
-      </el-button>
+        <el-button
+          class="button"
+          @click="openAll"
+        >
+          Search for data on components
+        </el-button>
+      </div>
+    </div>
+    <div class="content-container">
+      <div class="attribute-title-container">
+        <span class="attribute-title">Connectivity Graph</span>
+      </div>
+      <connectivity-graph
+        :entry="entry.featureId[0]"
+        :mapServer="envVars.FLATMAPAPI_LOCATION"
+        @tap-node="onTapNode"
+        ref="connectivityGraphRef"
+      />
     </div>
   </div>
 </template>
@@ -193,7 +217,7 @@ import {
 } from 'element-plus'
 import ExternalResourceCard from './ExternalResourceCard.vue'
 import EventBus from './EventBus.js'
-import { CopyToClipboard } from '@abi-software/map-utilities';
+import { CopyToClipboard, ConnectivityGraph } from '@abi-software/map-utilities';
 import '@abi-software/map-utilities/dist/style.css';
 
 const titleCase = (str) => {
@@ -218,6 +242,7 @@ export default {
     ElIconWarning,
     ExternalResourceCard,
     CopyToClipboard,
+    ConnectivityGraph,
   },
   props: {
     entry: {
@@ -232,6 +257,10 @@ export default {
         resource: undefined,
         featuresAlert: undefined,
       }),
+    },
+    envVars: {
+      type: Object,
+      default: () => {},
     },
     availableAnatomyFacets: {
       type: Array,
@@ -352,6 +381,20 @@ export default {
       // connected to flatmapvuer > moveMap(featureIds) function
       this.$emit('show-connectivity', featureIds);
     },
+    goToConnectivityGraph: function () {
+      const connectivityGraphRef = this.$refs.connectivityGraphRef;
+      if (connectivityGraphRef && connectivityGraphRef.$el) {
+        connectivityGraphRef.$el.scrollIntoView({
+          behavior: 'smooth',
+        });
+      }
+    },
+    onTapNode: function (data) {
+      /**
+       * This event is triggered by connectivity-graph's `tap-node` event.
+       */
+      this.$emit('connectivity-component-click', data);
+    },
     getUpdateCopyContent: function () {
       if (!this.entry) {
         return '';
@@ -447,6 +490,15 @@ export default {
       return contentArray.join('\n\n<br>');
     },
   },
+  mounted: function () {
+    EventBus.on('connectivity-graph-error', (errorMessage) => {
+      const connectivityGraphRef = this.$refs.connectivityGraphRef;
+
+      if (connectivityGraphRef) {
+        connectivityGraphRef.showErrorMessage(errorMessage);
+      }
+    });
+  },
 }
 </script>
 
@@ -458,7 +510,7 @@ export default {
 }
 
 .connectivity-info-title {
-  padding: 1rem;
+  padding: 0;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -476,16 +528,8 @@ export default {
   color: $app-primary-color;
 }
 
-.block {
-  margin-bottom: 0.5em;
-
-  .main > &:first-of-type {
-    margin-right: 1em;
-  }
-}
-
-.pub {
-  width: 16rem;
+.block + .block {
+  margin-top: 0.5em;
 }
 
 .button-circle {
@@ -585,6 +629,10 @@ export default {
   height: 100%;
   border-left: 1px solid var(--el-border-color);
   border-top: 1px solid var(--el-border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding: 1rem;
 }
 
 .attribute-title-container {
@@ -696,37 +744,16 @@ export default {
 
 .content-container {
   flex: 1 1 100%;
-  padding: 1rem;
+  padding: 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 
-  .block {
-    padding-top: 0.5em;
-
-    + .block {
-      margin-top: 1rem;
-    }
+  > div,
+  > .block + .block {
+    margin: 0;
   }
-
-  .connectivity-info-title ~ & {
-    padding-top: 0;
-  }
-}
-
-.scrollbar::-webkit-scrollbar-track {
-  border-radius: 10px;
-  background-color: #f5f5f5;
-}
-
-.scrollbar::-webkit-scrollbar {
-  width: 12px;
-  right: -12px;
-  background-color: #f5f5f5;
-}
-
-.scrollbar::-webkit-scrollbar-thumb {
-  border-radius: 4px;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-  background-color: #979797;
 }
 
 /* Fix for chrome bug where under triangle pops up above one on top of it  */

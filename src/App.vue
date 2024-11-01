@@ -112,6 +112,7 @@ export default {
         BL_SERVER_URL: import.meta.env.VITE_APP_BL_SERVER_URL,
         NL_LINK_PREFIX: import.meta.env.VITE_APP_NL_LINK_PREFIX,
         ROOT_URL: import.meta.env.VITE_APP_ROOT_URL,
+        FLATMAPAPI_LOCATION: import.meta.env.VITE_FLATMAPAPI_LOCATION,
       },
       connectivityInput: exampleConnectivityInput,
       activeId: 1,
