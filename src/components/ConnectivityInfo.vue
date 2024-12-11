@@ -61,6 +61,17 @@
       </div>
     </div>
 
+    <div class="content-container neuron-connection">
+      <div class="block attribute-title-container">
+        <span class="attribute-title">Neuron Connection</span>
+      </div>
+      <div class="block">
+        <el-button class="button" type="primary" @click="showNeuronConnection('origins')">Origins</el-button>
+        <el-button class="button" type="primary" @click="showNeuronConnection('destinations')">Destinations</el-button>
+        <el-button class="button" type="primary" @click="showNeuronConnection('others')">Others</el-button>
+      </div>
+    </div>
+
     <div class="content-container population-display">
       <div class="block attribute-title-container">
         <span class="attribute-title">Population Display</span>
@@ -351,6 +362,11 @@ export default {
     },
   },
   methods: {
+    showNeuronConnection: function (data) {
+      this.$emit('neuron-connection-change', {
+        type: data
+      });
+    },
     titleCase: function (title) {
       return titleCase(title)
     },
@@ -826,6 +842,19 @@ export default {
       border-color: transparent !important;
     }
   }
+
+  .el-button + .el-button {
+    margin-top: 0 !important;
+    margin-left: 10px !important;
+  }
+}
+
+.neuron-connection {
+  display: flex;
+  flex: 1 1 auto !important;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
 
   .el-button + .el-button {
     margin-top: 0 !important;
