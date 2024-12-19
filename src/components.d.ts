@@ -29,7 +29,6 @@ declare module 'vue' {
     ElRow: typeof import('element-plus/es')['ElRow']
     ElSelect: typeof import('element-plus/es')['ElSelect']
     ElTag: typeof import('element-plus/es')['ElTag']
-    ExternalResourceCard: typeof import('./components/ExternalResourceCard.vue')['default']
     ImageGallery: typeof import('./components/ImageGallery.vue')['default']
     SearchFilters: typeof import('./components/SearchFilters.vue')['default']
     SearchHistory: typeof import('./components/SearchHistory.vue')['default']
