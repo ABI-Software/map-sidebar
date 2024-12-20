@@ -22,13 +22,7 @@
               </el-popover>
             </template>
           </div>
-          <div
-            v-if="
-              entry.provenanceTaxonomyLabel &&
-              entry.provenanceTaxonomyLabel.length > 0
-            "
-            class="subtitle"
-          >
+          <div v-if="hasProvenanceTaxonomyLabel" class="subtitle">
             {{ provSpeciesDescription }}
           </div>
         </div>
@@ -61,7 +55,39 @@
       </div>
     </div>
 
-    <div class="content-container population-display">
+    <div class="content-container neuron-connection-button" v-if="entry.neuronCuration">
+      <div class="block attribute-title-container">
+        <span class="attribute-title">Neuron Connection</span>
+      </div>
+      <div class="block">
+        <el-button 
+          v-if="hasOrigins" 
+          class="button" 
+          type="primary"
+          @click="showNeuronConnection('origins')"
+        >
+          Origins
+        </el-button>
+        <el-button
+          v-if="hasComponents" 
+          class="button" 
+          type="primary"
+          @click="showNeuronConnection('components')"
+        >
+          Components
+        </el-button>
+        <el-button 
+          v-if="hasDestinations" 
+          class="button" 
+          type="primary"
+          @click="showNeuronConnection('destinations')"
+        >
+          Destinations
+        </el-button>
+      </div>
+    </div>
+
+    <div class="content-container population-display" v-if="entry.neuronCuration">
       <div class="block attribute-title-container">
         <span class="attribute-title">Population Display</span>
       </div>
@@ -83,7 +109,7 @@
 
     <div class="content-container content-container-connectivity" v-show="activeView === 'listView'">
       {{ entry.paths }}
-      <div v-if="entry.origins && entry.origins.length > 0" class="block">
+      <div v-if="hasOrigins" class="block">
         <div class="attribute-title-container">
           <span class="attribute-title">Origin</span>
           <el-popover
@@ -98,7 +124,6 @@
             <span style="word-break: keep-all">
               <i>Origin</i> {{ originDescription }}
             </span>
-
           </el-popover>
         </div>
         <div
@@ -109,13 +134,17 @@
           @mouseenter="toggleConnectivityTooltip(origin, {show: true})"
           @mouseleave="toggleConnectivityTooltip(origin, {show: false})"
         >
-          {{ capitalise(origin) }}
+          <span>{{ capitalise(origin) }}</span>
+          <el-icon 
+            v-if="entry.neuronCuration"
+            class="neuron-connection-icon" 
+            @click="showNeuronConnection('origins', origin)"
+          >
+            <el-icon-connection />
+          </el-icon>
         </div>
         <el-button
-          v-show="
-            entry.originsWithDatasets && entry.originsWithDatasets.length > 0 &&
-            shouldShowExploreButton(entry.originsWithDatasets)
-          "
+          v-show="hasOriginsWithDatasets"
           class="button"
           id="open-dendrites-button"
           @click="openDendrites"
@@ -123,10 +152,7 @@
           Explore origin data
         </el-button>
       </div>
-      <div
-        v-if="entry.components && entry.components.length > 0"
-        class="block"
-      >
+      <div v-if="hasComponents" class="block">
         <div class="attribute-title-container">
           <div class="attribute-title">Components</div>
         </div>
@@ -138,13 +164,17 @@
           @mouseenter="toggleConnectivityTooltip(component, {show: true})"
           @mouseleave="toggleConnectivityTooltip(component, {show: false})"
         >
-          {{ capitalise(component) }}
+          <span>{{ capitalise(component) }}</span>
+          <el-icon 
+            v-if="entry.neuronCuration"
+            class="neuron-connection-icon" 
+            @click="showNeuronConnection('components', component)"
+          >
+            <el-icon-connection />
+          </el-icon>
         </div>
       </div>
-      <div
-        v-if="entry.destinations && entry.destinations.length > 0"
-        class="block"
-      >
+      <div v-if="hasDestinations" class="block">
         <div class="attribute-title-container">
           <span class="attribute-title">Destination</span>
           <el-popover
@@ -169,32 +199,22 @@
           @mouseenter="toggleConnectivityTooltip(destination, {show: true})"
           @mouseleave="toggleConnectivityTooltip(destination, {show: false})"
         >
-          {{ capitalise(destination) }}
+          <span>{{ capitalise(destination) }}</span>
+          <el-icon 
+            v-if="entry.neuronCuration"
+            class="neuron-connection-icon" 
+            @click="showNeuronConnection('destinations', destination)"
+          >
+            <el-icon-connection />
+          </el-icon>
         </div>
-        <el-button
-          v-show="
-            entry.destinationsWithDatasets &&
-            entry.destinationsWithDatasets.length > 0 &&
-            shouldShowExploreButton(entry.destinationsWithDatasets)
-          "
-          class="button"
-          @click="openAxons"
+        <el-button v-show="hasDestinationsWithDatasets" class="button" @click="openAxons"
         >
           Explore destination data
         </el-button>
       </div>
-      <div
-        v-show="
-          entry.componentsWithDatasets &&
-          entry.componentsWithDatasets.length > 0 &&
-          shouldShowExploreButton(entry.componentsWithDatasets)
-        "
-        class="block"
-      >
-        <el-button
-          class="button"
-          @click="openAll"
-        >
+      <div v-show="hasComponentsWithDatasets" class="block">
+        <el-button class="button" @click="openAll">
           Search for data on components
         </el-button>
       </div>
@@ -227,6 +247,7 @@ import {
   ArrowUp as ElIconArrowUp,
   ArrowDown as ElIconArrowDown,
   Warning as ElIconWarning,
+  Connection as ElIconConnection,
 } from '@element-plus/icons-vue'
 /* eslint-disable no-alert, no-console */
 import {
@@ -319,6 +340,42 @@ export default {
     },
   },
   computed: {
+    hasProvenanceTaxonomyLabel: function () {
+      return (
+        this.entry.provenanceTaxonomyLabel &&
+        this.entry.provenanceTaxonomyLabel.length > 0
+      );
+    },
+    hasOrigins: function () {
+      return this.entry.origins && this.entry.origins.length > 0;
+    },
+    hasOriginsWithDatasets: function () {
+      return (
+        this.entry.originsWithDatasets &&
+        this.entry.originsWithDatasets.length > 0 &&
+        this.shouldShowExploreButton(this.entry.originsWithDatasets)
+      );
+    },
+    hasComponents: function () {
+      return this.entry.components && this.entry.components.length > 0;
+    },
+    hasComponentsWithDatasets: function () {
+      return (
+        this.entry.componentsWithDatasets &&
+        this.entry.componentsWithDatasets.length > 0 &&
+        this.shouldShowExploreButton(this.entry.componentsWithDatasets)
+      );
+    },
+    hasDestinations: function () {
+      return this.entry.destinations && this.entry.destinations.length > 0;
+    },
+    hasDestinationsWithDatasets: function () {
+      return (
+        this.entry.destinationsWithDatasets &&
+        this.entry.destinationsWithDatasets.length > 0 &&
+        this.shouldShowExploreButton(this.entry.destinationsWithDatasets)
+      );
+    },
     updatedCopyContent: function () {
       return this.getUpdateCopyContent();
     },
@@ -351,6 +408,13 @@ export default {
     },
   },
   methods: {
+    showNeuronConnection: function (type, label = undefined) {
+      const data = label ? this.findConnectivityDatasets(label) : []
+      this.$emit('neuron-connection-change', {
+        type: type,
+        data: data
+      });
+    },
     titleCase: function (title) {
       return titleCase(title)
     },
@@ -515,29 +579,29 @@ export default {
 
       return contentArray.join('\n\n<br>');
     },
-    toggleConnectivityTooltip: function (name, option) {
+    findConnectivityDatasets: function (label) {
       const allWithDatasets = [
         ...this.entry.componentsWithDatasets,
         ...this.entry.destinationsWithDatasets,
         ...this.entry.originsWithDatasets,
       ];
-      const names = name.split(','); // some features have more than one value
-      const data = [];
-      if (option.show) {
-        names.forEach((n) => {
-          const foundData = allWithDatasets.find((a) =>
-            a.name.toLowerCase().trim() === n.toLowerCase().trim()
-          );
-
-          if (foundData) {
-            data.push({
-              id: foundData.id,
-              label: foundData.name
-            });
-          }
-        });
-      }
-
+      const names = label.split(','); // some features have more than one value
+      let data = [];
+      names.forEach((n) => {
+        const foundData = allWithDatasets.find((a) =>
+          a.name.toLowerCase().trim() === n.toLowerCase().trim()
+        );
+        if (foundData) {
+          data.push({
+            id: foundData.id,
+            label: foundData.name
+          });
+        }
+      });
+      return data
+    },
+    toggleConnectivityTooltip: function (label, option) {
+      const data = option.show ? this.findConnectivityDatasets(label) : []
       // type: to show error only for click event
       this.$emit('connectivity-component-click', data);
     },
@@ -743,6 +807,8 @@ export default {
 }
 
 .attribute-content {
+  display: flex;
+  justify-content: space-between;
   font-size: 14px;
   font-weight: 500;
   transition: color 0.25s ease;
@@ -767,6 +833,11 @@ export default {
 
   &:last-of-type {
     margin-bottom: 0.5em;
+  }
+
+  .neuron-connection-icon {
+    padding: 4px;
+    cursor: pointer;
   }
 }
 
@@ -826,6 +897,19 @@ export default {
       border-color: transparent !important;
     }
   }
+
+  .el-button + .el-button {
+    margin-top: 0 !important;
+    margin-left: 10px !important;
+  }
+}
+
+.neuron-connection-button {
+  display: flex;
+  flex: 1 1 auto !important;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
 
   .el-button + .el-button {
     margin-top: 0 !important;
