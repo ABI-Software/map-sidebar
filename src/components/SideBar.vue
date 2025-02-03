@@ -37,6 +37,7 @@
                 v-if="tab.id === activeTabId"
                 :envVars="envVars"
                 :ref="'connectivityTab_' + tab.id"
+                :useDOIFormatter="useDOIFormatter"
                 @show-connectivity="showConnectivity"
                 @connectivity-component-click="onConnectivityComponentClick"
               />
@@ -165,7 +166,16 @@ export default {
         x: 0,
         y: 0,
       },
-    }
+    },
+    /**
+     * The option to use DOI.org as citation formatter.
+     * If set to `false`, citation.js will be used.
+     * Default is `true`.
+     */
+    useDOIFormatter: {
+      type: Boolean,
+      default: true,
+    },
   },
   data: function () {
     return {

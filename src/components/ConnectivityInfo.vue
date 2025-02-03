@@ -219,7 +219,7 @@
     </div>
 
     <div class="content-container content-container-references" v-if="resources.length">
-      <external-resource-card :resources="resources" @references-loaded="onReferencesLoaded"></external-resource-card>
+      <external-resource-card :resources="resources" :useDOIFormatter="useDOIFormatter" @references-loaded="onReferencesLoaded"></external-resource-card>
     </div>
   </div>
 </template>
@@ -292,6 +292,10 @@ export default {
     availableAnatomyFacets: {
       type: Array,
       default: () => [],
+    },
+    useDOIFormatter: {
+      type: Boolean,
+      default: true,
     },
   },
   data: function () {
