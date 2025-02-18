@@ -40,6 +40,7 @@
                 @show-connectivity="showConnectivity"
                 @show-reference-connectivities="onShowReferenceConnectivities"
                 @connectivity-component-click="onConnectivityComponentClick"
+                @neuron-connection-change="showNeuronConnection"
               />
             </template>
             <template v-else-if="tab.type === 'annotation'">
@@ -202,6 +203,9 @@ export default {
      */
     onConnectivityComponentClick: function (data) {
       this.$emit('connectivity-component-click', data);
+    },
+    showNeuronConnection: function (data) {
+      this.$emit('neuron-connection-change', data);
     },
     /**
      * This event is emitted when the search filters are changed.
