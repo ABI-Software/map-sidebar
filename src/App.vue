@@ -114,6 +114,7 @@ export default {
         { title: 'Flatmap', id: 1, type: 'search'},
         { title: 'Connectivity', id: 2, type: 'connectivity' },
         { title: 'Annotation', id: 3, type: 'annotation' },
+        { title: 'Connectivity Explorer', id: 4, type: 'connectivityExplorer' }
       ],
       sideBarVisibility: true,
       envVars: {

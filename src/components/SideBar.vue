@@ -54,6 +54,13 @@
                 @confirm-delete="$emit('confirm-delete', $event)"
               />
             </template>
+            <template v-else-if="tab.type === 'connectivityExplorer'">
+              <connectivity-explorer
+                :ref="'connectivityExplorerTab_' + tab.id"
+                v-show="tab.id === activeTabId"
+                :envVars="envVars"
+              />
+            </template>
             <template v-else>
               <SidebarContent
                 class="sidebar-content-container"
@@ -84,6 +91,7 @@ import EventBus from './EventBus.js'
 import Tabs from './Tabs.vue'
 import AnnotationTool from './AnnotationTool.vue'
 import ConnectivityInfo from './ConnectivityInfo.vue'
+import ConnectivityExplorer from './ConnectivityExplorer.vue'
 
 /**
  * Aims to provide a sidebar for searching capability for SPARC portal.
@@ -98,6 +106,7 @@ export default {
     Icon,
     ConnectivityInfo,
     AnnotationTool,
+    ConnectivityExplorer,
   },
   name: 'SideBar',
   props: {
@@ -126,7 +135,8 @@ export default {
       default: () => [
         { id: 1, title: 'Search', type: 'search' },
         { id: 2, title: 'Connectivity', type: 'connectivity' },
-        { id: 3, title: 'Annotation', type: 'annotation' }
+        { id: 3, title: 'Annotation', type: 'annotation' },
+        { id: 4, title: 'Connectivity Explorer', type: 'connectivityExplorer' }
       ],
     },
     /**
@@ -252,6 +262,8 @@ export default {
         refIdPrefix = 'connectivityTab_';
       } else if (type === 'annotation') {
         refIdPrefix = 'annotationTab_';
+      } else if (type === 'connectivityExplorer') {
+        refIdPrefix = 'connectivityExplorerTab_';
       }
       const tabObj = this.getTabByIdAndType(id, type);
       const tabRefId = refIdPrefix + tabObj.id;
@@ -327,7 +339,7 @@ export default {
     activeTabs: function() {
       const tabs = []
       this.tabs.forEach((tab) => {
-        if (tab.type === "search") {
+        if (tab.type === "search" || tab.type === "connectivityExplorer") {
           tabs.push(tab)
         } else if (tab.type === "connectivity") {
           if (this.connectivityInfo) {
