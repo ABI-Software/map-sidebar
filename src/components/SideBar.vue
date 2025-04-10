@@ -32,7 +32,7 @@
             <!-- Connectivity Info -->
             <template v-if="tab.type === 'connectivity' && connectivityInfo">
               <connectivity-info
-                :entry="connectivityInfo"
+                :connectivityEntry="connectivityInfo"
                 :availableAnatomyFacets="availableAnatomyFacets"
                 v-if="tab.id === activeTabId"
                 :envVars="envVars"
@@ -147,7 +147,7 @@ export default {
      * The connectivity info data to show in sidebar.
      */
     connectivityInfo: {
-      type: Object,
+      type: Array,
       default: null,
     },
     /**

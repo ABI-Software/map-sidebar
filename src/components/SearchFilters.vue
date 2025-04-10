@@ -788,11 +788,24 @@ export default {
       if (filters) {
         if (this.cascaderIsReady) {
           const result = []
+          const terms = []
           filters.forEach((filter) => {
             const validatedFilter =
               this.validateAndConvertFilterToHierarchical(filter)
             if (validatedFilter) {
               result.push(validatedFilter)
+              terms.push(validatedFilter.term)
+            }
+          })         
+          // make sure unused filter terms' show all checkbox is always checked 
+          this.options.forEach((option)=>{
+            if (!terms.includes(option.label)) {
+              result.push({
+                facet: "Show all",
+                facetPropPath: option.key,
+                label: "Show all",
+                term: option.label
+              })
             }
           })
           return result
