@@ -22,29 +22,15 @@
         </div>
         <div class="sidebar-container">
           <Tabs
-            v-if="activeTabs.length > 1"
-            :tabTitles="activeTabs"
+            v-if="tabEntries.length > 1"
+            :tabEntries="tabEntries"
             :activeId="activeTabId"
-            @titleClicked="tabClicked"
-            @tab-close="tabClose"
+            @tabClicked="tabClicked"
+            @tabClosed="tabClosed"
           />
           <template v-for="tab in tabs" key="tab.id">
-            <!-- Connectivity Info -->
-            <template v-if="tab.type === 'connectivity' && connectivityInfo">
-              <connectivity-info
-                :key="connectivityInfo.title"
-                :entry="connectivityInfo"
-                :availableAnatomyFacets="availableAnatomyFacets"
-                v-if="tab.id === activeTabId"
-                :envVars="envVars"
-                :ref="'connectivityTab_' + tab.id"
-                @show-connectivity="showConnectivity"
-                @show-reference-connectivities="onShowReferenceConnectivities"
-                @connectivity-component-click="onConnectivityComponentClick"
-              />
-            </template>
             <template v-if="tab.type === 'annotation'">
-              <annotation-tool
+              <AnnotationTool
                 :ref="'annotationTab_' + tab.id"
                 v-show="tab.id === activeTabId"
                 :annotationEntry="annotationEntry"
@@ -55,13 +41,29 @@
                 @confirm-delete="$emit('confirm-delete', $event)"
               />
             </template>
-            <template v-if="tab.type === 'search'">
+            <template v-else-if="tab.type === 'connectivityExplorer'">
+              <ConnectivityExplorer
+                :ref="'connectivityExplorerTab_' + tab.id"
+                v-show="tab.id === activeTabId"
+                :connectivityKnowledge="connectivityKnowledge"
+                :envVars="envVars"
+                :connectivityEntry="connectivityEntry"
+                :availableAnatomyFacets="availableAnatomyFacets"
+                @search-changed="searchChanged(tab.id, $event)"
+                @hover-changed="hoverChanged($event)"
+                @show-connectivity="showConnectivity"
+                @show-reference-connectivities="onShowReferenceConnectivities"
+                @connectivity-hovered="onConnectivityHovered"
+                @connectivity-explorer-clicked="onConnectivityExplorerClicked"
+              />
+            </template>
+            <template v-else>
               <SidebarContent
                 class="sidebar-content-container"
                 v-show="tab.id === activeTabId"
                 :contextCardEntry="tab.contextCard"
                 :envVars="envVars"
-                :ref="'searchTab_' + tab.id"
+                :ref="'datasetExplorerTab_' + tab.id"
                 @search-changed="searchChanged(tab.id, $event)"
                 @hover-changed="hoverChanged($event)"
               />
@@ -84,7 +86,7 @@ import SidebarContent from './SidebarContent.vue'
 import EventBus from './EventBus.js'
 import Tabs from './Tabs.vue'
 import AnnotationTool from './AnnotationTool.vue'
-import ConnectivityInfo from './ConnectivityInfo.vue'
+import ConnectivityExplorer from './ConnectivityExplorer.vue'
 
 /**
  * Aims to provide a sidebar for searching capability for SPARC portal.
@@ -97,11 +99,19 @@ export default {
     ElIconArrowRight,
     Drawer,
     Icon,
-    ConnectivityInfo,
     AnnotationTool,
+    ConnectivityExplorer,
   },
   name: 'SideBar',
   props: {
+    tabs: {
+      type: Array,
+      default: [
+        { title: 'Dataset Explorer', id: 1, type: 'datasetExplorer', closable: false },
+        { title: 'Connectivity Explorer', id: 2, type: 'connectivityExplorer', closable: false },
+        { title: 'Annotation', id: 3, type: 'annotation', closable: true },
+      ],
+    },
     /**
      * The option to show side bar.
      */
@@ -120,24 +130,6 @@ export default {
       default: () => {},
     },
     /**
-     * The array of objects to show multiple sidebar contents.
-     */
-    tabs: {
-      type: Array,
-      default: () => [
-        { id: 1, title: 'Search', type: 'search' },
-        { id: 2, title: 'Connectivity', type: 'connectivity' },
-        { id: 3, title: 'Annotation', type: 'annotation' }
-      ],
-    },
-    /**
-     * The active tab id for default tab.
-     */
-    activeTabId: {
-      type: Number,
-      default: 1,
-    },
-    /**
      * The option to show or hide sidebar on page load.
      */
     openAtStart: {
@@ -147,16 +139,16 @@ export default {
     /**
      * The connectivity info data to show in sidebar.
      */
-    connectivityInfo: {
-      type: Object,
-      default: null,
+    connectivityEntry: {
+      type: Array,
+      default: [],
     },
     /**
      * The annotation data to show in sidebar.
      */
     annotationEntry: {
-      type: Object,
-      default: null,
+      type: Array,
+      default: [],
     },
     createData: {
       type: Object,
@@ -167,15 +159,23 @@ export default {
         x: 0,
         y: 0,
       },
-    }
+    },
+    connectivityKnowledge: {
+      type: Array,
+      default: [],
+    },
   },
   data: function () {
     return {
       drawerOpen: false,
-      availableAnatomyFacets: []
+      availableAnatomyFacets: [],
+      activeTabId: 1,
     }
   },
   methods: {
+    onConnectivityExplorerClicked: function (data) {
+      this.$emit('connectivity-explorer-clicked', data)
+    },
     /**
      * This event is emitted when the mouse hover are changed.
      * @arg data
@@ -198,11 +198,11 @@ export default {
       this.$emit('show-reference-connectivities', refSource);
     },
     /**
-     * This function is triggered after a connectivity component is clicked.
+     * This function is triggered after connectivity term is hovered.
      * @arg data
      */
-    onConnectivityComponentClick: function (data) {
-      this.$emit('connectivity-component-click', data);
+    onConnectivityHovered: function (data) {
+      this.$emit('connectivity-hovered', data);
     },
     /**
      * This event is emitted when the search filters are changed.
@@ -225,43 +225,34 @@ export default {
     toggleDrawer: function () {
       this.drawerOpen = !this.drawerOpen
     },
+    openConnectivitySearch: function (facets, query) {
+      this.drawerOpen = true;
+      // Because refs are in v-for, nextTick is needed here
+      this.$nextTick(() => {
+        const connectivityExplorerTabRef = this.getTabRef(undefined, 'connectivityExplorer', true);
+        connectivityExplorerTabRef.openSearch(facets, query);
+      })
+    },
     openSearch: function (facets, query) {
       this.drawerOpen = true
       // Because refs are in v-for, nextTick is needed here
       this.$nextTick(() => {
-        const searchTabRef = this.getSearchTabRefById(1);
-        searchTabRef.openSearch(facets, query);
+        const datasetExplorerTabRef = this.getTabRef(undefined, 'datasetExplorer', true);
+        datasetExplorerTabRef.openSearch(facets, query);
       })
-    },
-    /**
-     * Get the tab object by tab id and type.
-     * If not found, return the first available tab.
-     */
-    getTabByIdAndType: function (id, type) {
-      const tabId = id || this.activeTabId;
-      const tabType = type || 'search'; // default to search tab
-      const tabObj = this.activeTabs.find((tab) => tab.id === tabId && tab.type === tabType);
-      const firstAvailableTab = this.activeTabs[0];
-      return tabObj || firstAvailableTab;
     },
     /**
      * Get the ref id of the tab by id and type.
      */
-    getTabRefId: function (id, type) {
-      let refIdPrefix = 'searchTab_'; // default to search tab
-      if (type === 'connectivity') {
-        refIdPrefix = 'connectivityTab_';
-      } else if (type === 'annotation') {
-        refIdPrefix = 'annotationTab_';
-      }
-      const tabObj = this.getTabByIdAndType(id, type);
-      const tabRefId = refIdPrefix + tabObj.id;
-      return tabRefId;
-    },
-    getSearchTabRefById: function (id) {
-      const searchTabId = id || 1; // to use id when there are multiple search tabs
-      const searchTabRefId = this.getTabRefId(searchTabId, 'search');
-      return this.$refs[searchTabRefId][0];
+    getTabRef: function (id, type, switchTab = false) {
+      const matchedTab = this.tabEntries.filter((tabEntry) => {
+        return (id === undefined || tabEntry.id === id) &&
+          (type === undefined || tabEntry.type === type);
+      });
+      const tabInfo = matchedTab.length ? matchedTab : this.tabEntries;
+      const tabRef = tabInfo[0].type + 'Tab_' + tabInfo[0].id;
+      if (switchTab) this.setActiveTab({ id: tabInfo[0].id, type: tabInfo[0].type });
+      return this.$refs[tabRef][0];
     },
     /**
      * The function to add filters to sidebar search.
@@ -275,16 +266,16 @@ export default {
 
       // Because refs are in v-for, nextTick is needed here
       this.$nextTick(() => {
-        const searchTabRef = this.getSearchTabRefById(1);
-        searchTabRef.addFilter(filter)
+        const datasetExplorerTabRef = this.getTabRef(undefined, 'datasetExplorer', true);
+        datasetExplorerTabRef.addFilter(filter)
       })
     },
     openNeuronSearch: function (neuron) {
       this.drawerOpen = true
       // Because refs are in v-for, nextTick is needed here
       this.$nextTick(() => {
-        const searchTabRef = this.getSearchTabRefById(1);
-        searchTabRef.openSearch(
+        const datasetExplorerTabRef = this.getTabRef(undefined, 'datasetExplorer', true);
+        datasetExplorerTabRef.openSearch(
           '',
           undefined,
           'scicrunch-query-string/',
@@ -293,27 +284,25 @@ export default {
       })
     },
     getAlgoliaFacets: async function () {
-      const searchTabRef = this.getSearchTabRefById(1);
-      return await searchTabRef.getAlgoliaFacets()
+      const datasetExplorerTabRef = this.getTabRef(undefined, 'datasetExplorer');
+      return await datasetExplorerTabRef.getAlgoliaFacets()
     },
     setDrawerOpen: function (value = true) {
       this.drawerOpen = value
     },
-    /**
-     * The function to emit 'tabClicked' event with tab's `id` and tab's `type`
-     * when user clicks the sidebar tab.
-     * @param {Object} {id, type}
-     * @public
-     */
-    tabClicked: function ({id, type}) {
-      /**
-       * This event is emitted when user click sidebar's tab.
-       * @arg {Object} {id, type}
-       */
-      this.$emit('tabClicked', {id, type});
+    setActiveTab: function (tab) {
+      const matchedTab = this.tabs.filter((tabEntry) => {
+        return tabEntry.id === tab.id && tabEntry.type === tab.type;
+      });
+      const tabInfo = matchedTab.length ? matchedTab : this.tabEntries;
+      this.activeTabId = tabInfo[0].id;
     },
-    tabClose: function (id) {
-      this.$emit('tab-close', id);
+    tabClicked: function (tab) {
+      this.setActiveTab(tab);
+      this.$emit('tabClicked', tab);
+    },
+    tabClosed: function (tab) {
+      this.$emit('tabClosed', tab);
     },
     /**
      * To receive error message for connectivity graph
@@ -322,25 +311,25 @@ export default {
     updateConnectivityGraphError: function (errorInfo) {
       EventBus.emit('connectivity-graph-error', errorInfo);
     },
+    /**
+     * Store available anatomy facets data for connectivity list component
+     */
+    storeAvailableAnatomyFacets: function (availableAnatomyFacets) {
+      localStorage.setItem('available-anatomy-facets', JSON.stringify(availableAnatomyFacets))
+    },
   },
   computed: {
     // This should respect the information provided by the property
-    activeTabs: function() {
-      const tabs = []
-      this.tabs.forEach((tab) => {
-        if (tab.type === "search") {
-          tabs.push(tab)
-        } else if (tab.type === "connectivity") {
-          if (this.connectivityInfo) {
-            tabs.push(tab);
-          }
-        } else if (tab.type === "annotation") {
-          if (this.annotationEntry && Object.keys(this.annotationEntry).length > 0) {
-            tabs.push(tab);
-          }
-        }
-      })
-      return tabs;
+    tabEntries: function () {
+      return this.tabs.filter((tab) =>
+        tab.type === "datasetExplorer" ||
+        tab.type === "connectivityExplorer" ||
+        (
+          tab.type === "annotation" &&
+          this.annotationEntry &&
+          this.annotationEntry.length > 0
+        )
+      );
     },
   },
   created: function () {
@@ -388,15 +377,18 @@ export default {
     })
     EventBus.on('onConnectivityActionClick', (payLoad) => {
       // switch to search tab with tab id: 1
-      this.tabClicked({id: 1, type: 'search'});
+      this.tabClicked({id: 1, type: 'datasetExplorer'});
       this.$emit('actionClick', payLoad);
+    })
+    EventBus.on('connectivity-source-change', (payLoad) => {
+      this.$emit('connectivity-source-change', payLoad);
     })
 
     // Get available anatomy facets for the connectivity info
     EventBus.on('available-facets', (payLoad) => {
         this.availableAnatomyFacets = payLoad.find((facet) => facet.label === 'Anatomical Structure').children
+        this.storeAvailableAnatomyFacets(this.availableAnatomyFacets);
     })
-
   },
 }
 </script>

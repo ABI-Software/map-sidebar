@@ -16,22 +16,22 @@
       <el-button @click="keywordSearch">keyword search</el-button>
       <el-button @click="getFacets">Get facets</el-button>
       <el-button @click="toggleCreateData">Create Data/Annotation</el-button>
+      <el-button @click="openConnectivitySearch()">Connectivity Search</el-button>
     </div>
     <SideBar
       :envVars="envVars"
       class="side-bar"
       ref="sideBar"
       :visible="sideBarVisibility"
-      :tabs="tabs"
-      :activeTabId="activeId"
       :annotationEntry="annotationEntry"
       :createData="createData"
-      :connectivityInfo="connectivityInput"
-      @tabClicked="tabClicked"
+      :connectivityEntry="connectivityEntry"
+      :connectivityKnowledge="connectivityKnowledge"
       @search-changed="searchChanged($event)"
       @hover-changed="hoverChanged($event)"
-      @connectivity-component-click="onConnectivityComponentClick"
+      @connectivity-hovered="onConnectivityHovered"
       @actionClick="action"
+      @connectivity-explorer-clicked="onConnectivityExplorerClicked"
     />
   </div>
 </template>
@@ -43,7 +43,23 @@ import SideBar from './components/SideBar.vue'
 import EventBus from './components/EventBus.js'
 import exampleConnectivityInput from './exampleConnectivityInput.js'
 
+
 const capitalise = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
+const flatmapQuery = (flatmapApi, sql) => {
+  const data = { sql: sql };
+  return fetch(`${flatmapApi}knowledge/query/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => response.json())
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+};
 
 // let testContext = {
 //   "description": "3D digital tracings of the enteric plexus obtained from seven subjects (M11, M16, M162, M163, M164, M168) are mapped randomly on mouse proximal colon. The data depicts individual neural wiring patterns in enteric microcircuits, and revealed both neuron and fiber units wired in a complex organization.",
@@ -94,27 +110,19 @@ export default {
   components: {
     SideBar,
   },
-  computed: {
-    tabs: function () {
-      let temp = [...this.tabArray]
-      for (let i in this.tabArray) {
-        temp[i].contextCard = this.contextArray[i]
-      }
-      return temp
-    },
+  provide() {
+    return {
+      $annotator: undefined,
+      userApiKey: undefined,
+    }
   },
   data: function () {
     return {
-      annotationEntry: {
-        featureId :"epicardium",
-        resourceId: "https://mapcore-bucket1.s3-us-west-2.amazonaws.com/others/29_Jan_2020/heartICN_metadata.json","resource":"https://mapcore-bucket1.s3-us-west-2.amazonaws.com/others/29_Jan_2020/heartICN_metadata.json"
-      },
-      contextArray: [null, null],
-      tabArray: [
-        { title: 'Flatmap', id: 1, type: 'search'},
-        { title: 'Connectivity', id: 2, type: 'connectivity' },
-        { title: 'Annotation', id: 3, type: 'annotation' },
-      ],
+      annotationEntry: [{
+        featureId: "epicardium",
+        resourceId: "https://mapcore-bucket1.s3-us-west-2.amazonaws.com/others/29_Jan_2020/heartICN_metadata.json",
+        "resource": "https://mapcore-bucket1.s3-us-west-2.amazonaws.com/others/29_Jan_2020/heartICN_metadata.json"
+      }],
       sideBarVisibility: true,
       envVars: {
         API_LOCATION: import.meta.env.VITE_APP_API_LOCATION,
@@ -127,8 +135,7 @@ export default {
         ROOT_URL: import.meta.env.VITE_APP_ROOT_URL,
         FLATMAPAPI_LOCATION: import.meta.env.VITE_FLATMAPAPI_LOCATION,
       },
-      connectivityInput: exampleConnectivityInput,
-      activeId: 1,
+      connectivityEntry: [],
       createData: {
         toBeConfirmed: false,
         points: [],
@@ -137,17 +144,66 @@ export default {
         y: 0,
       },
       createDataSet: false,
+      sckanVersion: 'sckan-2024-09-21-npo',
+      flatmapKnowledge: [],
+      connectivityKnowledge: [],
+      query: '',
+      filter: [],
+      target: [],
     }
   },
   methods: {
+    loadConnectivityKnowledge: async function () {
+      const sql = `select knowledge from knowledge
+        where source="${this.sckanVersion}"
+        order by source desc`;
+      const response = await flatmapQuery(this.envVars.FLATMAPAPI_LOCATION, sql);
+      const mappedData = response.values.map(x => x[0]);
+      const knowledge = mappedData.map(x => JSON.parse(x));
+      this.flatmapKnowledge = knowledge.filter((item) => {
+        if (item.source === this.sckanVersion && item.connectivity?.length) return true;
+        return false;
+      });
+      this.connectivityKnowledge = this.flatmapKnowledge;
+    },
+    connectivityQueryFilter: async function (payload) {
+      let results = this.flatmapKnowledge;
+      if (payload.type === "query-update") {
+        if (this.query !== payload.value) this.target = [];
+        this.query = payload.value;
+      } else if (payload.type === "filter-update") {
+        this.filter = payload.value;
+        this.target = [];
+      } else if (payload.type === "query-filter-update") {
+        this.query = payload.query;
+        this.filter = payload.filter;
+        this.target = payload.data;
+      }
+      if (this.query) {
+        let flag = "", order = [], paths = [];
+        const labels = ['neuron type aacar 11'];
+        flag = 'label';
+        order = labels;
+        if (labels.length === 1) {
+          paths =['ilxtr:neuron-type-aacar-11', 'ilxtr:neuron-type-bolew-unbranched-11'];
+          flag = 'id';
+          order = [this.query, ...paths.filter(item => item !== this.query)];
+        }
+        results = results.filter(item => paths.includes(item.id) || labels.includes(item.label));
+        results.sort((a, b) => order.indexOf(a[flag]) - order.indexOf(b[flag]));
+      }
+      this.connectivityKnowledge = results;
+    },
     hoverChanged: function (data) {
       console.log('hoverChanged', data)
     },
     searchChanged: function (data) {
-      console.log(data)
-    },
-    tabClicked: function (tab) {
-      this.activeId = tab.id
+      if (!this.flatmapKnowledge.length) {
+        this.loadConnectivityKnowledge();
+      }
+      if (data.id === 2) {
+        this.connectivityQueryFilter(data)
+      }
     },
     // For connectivity input actions
     action: function (action) {
@@ -280,11 +336,19 @@ export default {
         this.createDataSet = false
       }
     },
-    onConnectivityComponentClick: function(data) {
-      console.log("onConnectivityComponentClick" , data)
+    onConnectivityHovered: function(data) {
+      console.log("onConnectivityHovered" , data)
+    },
+    openConnectivitySearch: function (entry) {
+      const query = entry ? entry.query : 'ilxtr:neuron-type-aacar-5'
+      const filter = entry ? entry.filter : []
+      this.$refs.sideBar.openConnectivitySearch(filter, query)
+    },
+    onConnectivityExplorerClicked: function () {
+      this.connectivityEntry = [...exampleConnectivityInput]
     }
   },
-  mounted: function () {
+  mounted: async function () {
     console.log('mounted app')
     EventBus.on('contextUpdate', (payLoad) => {
       console.log('contextUpdate', payLoad)

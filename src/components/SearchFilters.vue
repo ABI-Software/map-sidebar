@@ -1,89 +1,91 @@
 <template>
   <div class="filters">
     <MapSvgSpriteColor />
-    <div class="cascader-tag" v-if="presentTags.length > 0">
-      <el-tag
-        class="ml-2"
-        type="info"
-        closable
-        @close="cascadeTagClose(presentTags[0])"
-      >
-        {{ presentTags[0] }}
-      </el-tag>
-      <el-popover
-        v-if="presentTags.length > 1"
-        placement="bottom-start"
-        :width="200"
-        trigger="hover"
-        popper-class="cascade-tags-popover"
-      >
-        <template #default>
-          <div class="el-tags-container">
-            <el-tag
-              v-for="(tag, i) in presentTags.slice(1)"
-              :key="i"
-              class="ml-2"
-              type="info"
-              closable
-              @close="cascadeTagClose(tag)"
-            >
-              {{ tag }}
-            </el-tag>
-          </div>
-        </template>
-        <template #reference>
-          <div class="el-tags-container">
-            <el-tag
-              v-if="presentTags.length > 1"
-              class="ml-2"
-              type="info"
-            >
-              +{{ presentTags.length - 1 }}
-            </el-tag>
-          </div>
-        </template>
-      </el-popover>
-    </div>
-    <transition name="el-zoom-in-top">
-      <span v-show="showFilters" v-loading="!cascaderIsReady" class="search-filters transition-box">
-        <el-cascader
-          class="cascader"
-          ref="cascader"
-          v-model="cascadeSelected"
-          size="large"
-          placeholder=" "
-          :collapse-tags="true"
-          collapse-tags-tooltip
-          :options="options"
-          :props="props"
-          @change="cascadeEvent($event)"
-          @expand-change="cascadeExpandChange"
-          :show-all-levels="true"
-          popper-class="sidebar-cascader-popper"
-        />
-        <div v-if="showFiltersText" class="filter-default-value">Filters</div>
-        <el-popover
-          title="How do filters work?"
-          width="250"
-          trigger="hover"
-          popper-class="filter-help-popover"
+    <div v-show="showFilters">
+      <div class="cascader-tag" v-if="presentTags.length > 0">
+        <el-tag
+          class="ml-2"
+          type="info"
+          closable
+          @close="cascadeTagClose(presentTags[0])"
         >
-          <template #reference>
-            <MapSvgIcon icon="help" class="help" />
+          {{ presentTags[0] }}
+        </el-tag>
+        <el-popover
+          v-if="presentTags.length > 1"
+          placement="bottom-start"
+          :width="200"
+          trigger="hover"
+          popper-class="cascade-tags-popover"
+        >
+          <template #default>
+            <div class="el-tags-container">
+              <el-tag
+                v-for="(tag, i) in presentTags.slice(1)"
+                :key="i"
+                class="ml-2"
+                type="info"
+                closable
+                @close="cascadeTagClose(tag)"
+              >
+                {{ tag }}
+              </el-tag>
+            </div>
           </template>
-          <div>
-            <strong>Within categories:</strong> OR
-            <br />
-            example: 'heart' OR 'colon'
-            <br />
-            <br />
-            <strong>Between categories:</strong> AND
-            <br />
-            example: 'rat' AND 'lung'
-          </div>
+          <template #reference>
+            <div class="el-tags-container">
+              <el-tag
+                v-if="presentTags.length > 1"
+                class="ml-2"
+                type="info"
+              >
+                +{{ presentTags.length - 1 }}
+              </el-tag>
+            </div>
+          </template>
         </el-popover>
-      </span>
-    </transition>
+      </div>
+      <transition name="el-zoom-in-top">
+        <span v-loading="!cascaderIsReady" class="search-filters transition-box">
+          <el-cascader
+            class="cascader"
+            ref="cascader"
+            v-model="cascadeSelected"
+            size="large"
+            placeholder=" "
+            :collapse-tags="true"
+            collapse-tags-tooltip
+            :options="options"
+            :props="props"
+            @change="cascadeEvent($event)"
+            @expand-change="cascadeExpandChange"
+            :show-all-levels="true"
+            popper-class="sidebar-cascader-popper"
+          />
+          <div v-if="showFiltersText" class="filter-default-value">Filters</div>
+          <el-popover
+            title="How do filters work?"
+            width="250"
+            trigger="hover"
+            popper-class="filter-help-popover"
+          >
+            <template #reference>
+              <MapSvgIcon icon="help" class="help" />
+            </template>
+            <div>
+              <strong>Within categories:</strong> OR
+              <br />
+              example: 'heart' OR 'colon'
+              <br />
+              <br />
+              <strong>Between categories:</strong> AND
+              <br />
+              example: 'rat' AND 'lung'
+            </div>
+          </el-popover>
+        </span>
+      </transition>
+    </div>
     <div class="dataset-shown">
       <span class="dataset-results-feedback">{{ numberOfResultsText }}</span>
       <el-select
@@ -164,7 +166,6 @@ export default {
         organ: false,
         datasets: false,
       },
-      showFilters: true,
       showFiltersText: true,
       cascadeSelected: [],
       cascadeSelectedWithBoolean: [],
@@ -197,6 +198,9 @@ export default {
     numberOfResultsText: function () {
       return `${this.entry.numberOfHits} results | Showing`
     },
+    showFilters: function () {
+      return this.entry.showFilters
+    }
   },
   methods: {
     createCascaderItemValue: function (
@@ -213,7 +217,60 @@ export default {
         )
       return value
     },
+    processOptions: function () {
+      // create top level of options in cascader
+      this.options.forEach((facet, i) => {
+        this.options[i].total = this.countTotalFacet(facet)
+
+        this.options[i].label = convertReadableLabel(facet.label)
+        this.options[i].value = this.createCascaderItemValue(
+          facet.key,
+          undefined
+        )
+
+        // put "Show all" as first option
+        this.options[i].children.unshift({
+          value: this.createCascaderItemValue('Show all'),
+          label: 'Show all',
+        })
+
+        // populate second level of options
+        this.options[i].children.forEach((facetItem, j) => {
+          // Format labels except funding program
+          if (this.options[i].children[j].facetPropPath !== 'pennsieve.organization.name') {
+            this.options[i].children[j].label = convertReadableLabel(
+              facetItem.label
+            )
+          }
+          this.options[i].children[j].value =
+            this.createCascaderItemValue(facet.label, facetItem.label)
+          if (
+            this.options[i].children[j].children &&
+            this.options[i].children[j].children.length > 0
+          ) {
+            this.options[i].children[j].children.forEach((term, k) => {
+              this.options[i].children[j].children[k].label =
+                convertReadableLabel(term.label)
+              this.options[i].children[j].children[k].value =
+                this.createCascaderItemValue(
+                  facet.label,
+                  facetItem.label,
+                  term.label
+                )
+            })
+          }
+        })
+      })
+    },
     populateCascader: function () {
+      if (this.entry.options) {
+        return new Promise((resolve) => {
+          this.facets = this.entry.options
+          this.options = this.entry.options
+          this.processOptions()
+          resolve();
+        });
+      }
       return new Promise((resolve) => {
         // Algolia facet serach
         this.algoliaClient
@@ -222,50 +279,7 @@ export default {
             this.facets = data
             EventBus.emit('available-facets', data)
             this.options = data
-
-            // create top level of options in cascader
-            this.options.forEach((facet, i) => {
-              this.options[i].total = this.countTotalFacet(facet)
-
-              this.options[i].label = convertReadableLabel(facet.label)
-              this.options[i].value = this.createCascaderItemValue(
-                facet.key,
-                undefined
-              )
-
-              // put "Show all" as first option
-              this.options[i].children.unshift({
-                value: this.createCascaderItemValue('Show all'),
-                label: 'Show all',
-              })
-
-              // populate second level of options
-              this.options[i].children.forEach((facetItem, j) => {
-                // Format labels except funding program
-                if (this.options[i].children[j].facetPropPath !== 'pennsieve.organization.name') {
-                  this.options[i].children[j].label = convertReadableLabel(
-                    facetItem.label
-                  )
-                }
-                this.options[i].children[j].value =
-                  this.createCascaderItemValue(facet.label, facetItem.label)
-                if (
-                  this.options[i].children[j].children &&
-                  this.options[i].children[j].children.length > 0
-                ) {
-                  this.options[i].children[j].children.forEach((term, k) => {
-                    this.options[i].children[j].children[k].label =
-                      convertReadableLabel(term.label)
-                    this.options[i].children[j].children[k].value =
-                      this.createCascaderItemValue(
-                        facet.label,
-                        facetItem.label,
-                        term.label
-                      )
-                  })
-                }
-              })
-            })
+            this.processOptions()
           })
           .finally(() => {
             resolve()
@@ -735,13 +749,18 @@ export default {
     removeTopLevelCascaderCheckboxes: function () {
       // Next tick allows the cascader menu to change
       this.$nextTick(() => {
-        let cascadePanels = document.querySelectorAll(
-          '.sidebar-cascader-popper .el-cascader-menu__list'
-        )
-        // Hide the checkboxes on the first level of the cascader
-        cascadePanels[0]
-          .querySelectorAll('.el-checkbox__input')
-          .forEach((el) => (el.style.display = 'none'))
+        const cascadePanels = document.querySelectorAll('.sidebar-cascader-popper .el-cascader-menu__list');
+
+        cascadePanels.forEach(panel => {
+          const panelText = panel.textContent;
+          const expandArrow = panel.querySelector('.el-icon.arrow-right');
+
+          if (!panelText.includes('Show all') && expandArrow) {
+            panel.querySelectorAll('.el-checkbox__input').forEach(checkbox => {
+              checkbox.style.display = 'none';
+            });
+          }
+        });
       })
     },
     /*
@@ -788,11 +807,24 @@ export default {
       if (filters) {
         if (this.cascaderIsReady) {
           const result = []
+          const terms = []
           filters.forEach((filter) => {
             const validatedFilter =
               this.validateAndConvertFilterToHierarchical(filter)
             if (validatedFilter) {
               result.push(validatedFilter)
+              terms.push(validatedFilter.term)
+            }
+          })         
+          // make sure unused filter terms' show all checkbox is always checked 
+          this.options.forEach((option)=>{
+            if (!terms.includes(option.label)) {
+              result.push({
+                facet: "Show all",
+                facetPropPath: option.key,
+                label: "Show all",
+                term: option.label
+              })
             }
           })
           return result

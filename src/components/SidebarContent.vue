@@ -18,6 +18,14 @@
         >
           Search
         </el-button>
+        <el-button
+          link
+          class="el-button-link"
+          @click="openSearch([], '')"
+          size="large"
+        >
+          Reset
+        </el-button>
       </div>
     </template>
     <SearchFilters
@@ -32,6 +40,7 @@
     ></SearchFilters>
     <SearchHistory
       ref="searchHistory"
+      localStorageKey="sparc.science-dataset-search-history"
       @search="searchHistorySearch"
     ></SearchHistory>
     <div class="content scrollbar" v-loading="loadingCards" ref="content">
@@ -159,12 +168,14 @@ export default {
       return {
         numberOfHits: this.numberOfHits,
         filterFacets: this.filter,
+        showFilters: true
       }
     },
   },
   methods: {
     hoverChanged: function (data) {
-      this.$emit('hover-changed', data)
+      const payload = data ? { ...data, type: 'dataset' } : data
+      this.$emit('hover-changed', payload)
     },
     resetSearch: function () {
       this.numberOfHits = 0
@@ -489,6 +500,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '../assets/pagination.scss';
+
 .dataset-card {
   position: relative;
 
@@ -548,23 +561,6 @@ export default {
       color: #fff;
     }
   }
-}
-
-.pagination {
-  padding-bottom: 16px;
-  background-color: white;
-  padding-left: 95px;
-  font-weight: bold;
-}
-
-.pagination :deep(button) {
-  background-color: white !important;
-}
-.pagination :deep(li) {
-  background-color: white !important;
-}
-.pagination :deep(li.is-active) {
-  color: $app-primary-color;
 }
 
 .error-feedback {
@@ -635,5 +631,15 @@ export default {
 :deep(.my-drawer) {
   background: rgba(0, 0, 0, 0);
   box-shadow: none;
+}
+
+.el-button-link {
+  color: white !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    text-decoration-color: transparent;
+  }
 }
 </style>

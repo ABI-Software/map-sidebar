@@ -65,7 +65,7 @@ export default {
   },
   props: {
     annotationEntry: {
-      type: Object,
+      type: Array,
     },
     createData: {
       type: Object,

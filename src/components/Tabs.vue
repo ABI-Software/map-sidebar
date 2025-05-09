@@ -1,40 +1,35 @@
 <template>
-  <div class="tab-container">
+  <div class="tabs-container">
     <div
-      class="title"
-      v-for="title in tabTitles"
-      :key="title.id"
-      :class="{ 'active-tab': title.id == activeId }"
+      class="tab"
+      v-for="tab in tabs"
+      :key="tab.id"
+      :class="{ 'active-tab': tab.id == activeId }"
+      @click="tabClicked(tab)"
     >
-      <div
-        class="title-text-table"
-        v-bind:class="{ highlightText: title.id == activeId }"
-        v-on:click="titleClicked(title.id, title.type)"
+      <span class="tab-title">{{ tab.title }} </span>
+      <el-icon
+        v-if="tab.closable"
+        @click.stop="tabClosed(tab)"
+        class="tab-close-icon"
       >
-        <div class="title-text">
-          {{ title.title }}
-        </div>
-      </div>
-      <el-button
-        v-if="title.id > 1"
-        @click="tabClose(title.id)"
-        class="button-tab-close"
-        aria-label="Close"
-      >
-        &times;
-        <span class="visually-hidden">Close</span>
-      </el-button>
+        <el-icon-close />
+      </el-icon>
     </div>
   </div>
 </template>
 
 <script>
 /* eslint-disable no-alert, no-console */
+import { Close as ElIconClose } from "@element-plus/icons-vue";
 
 export default {
-  name: 'Tabs',
+  name: "Tabs",
+  components: {
+    ElIconClose,
+  },
   props: {
-    tabTitles: {
+    tabEntries: {
       type: Array,
       default: () => [],
     },
@@ -42,106 +37,72 @@ export default {
       type: Number,
       default: 1,
     },
+    contextArray: {
+      type: Array,
+      default: () => [],
+    },
+  },
+  computed: {
+    tabs: function () {
+      // permanent tabs always show in the front
+      const permanent = this.tabEntries.filter((t) => !t.closable);
+      const temporary = this.tabEntries.filter((t) => t.closable);
+      let entries = permanent.concat(temporary);
+      if (this.contextArray.length) {
+        for (let i in entries) {
+          entries[i].contextCard = this.contextArray[i];
+        }
+      }
+      return entries;
+    },
   },
   methods: {
-    titleClicked: function (id, type) {
-      this.$emit('titleClicked', {id, type})
+    tabClicked: function (tab) {
+      this.$emit("tabClicked", { id: tab.id, type: tab.type });
     },
-    tabClose: function (id) {
-      this.$emit('tab-close', id);
+    tabClosed: function (tab) {
+      this.$emit("tabClosed", { id: tab.id, type: tab.type });
     },
   },
-}
+};
 </script>
 
 <style lang="scss" scoped>
-$tab-height: 30px;
-
-.tab-container {
-  height: $tab-height + 2;
+.tabs-container {
   display: flex;
-  flex-direction: row;
-  position: relative;
-  z-index: 1;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
-.title {
-  height: $tab-height;
+.tab {
+  height: 30px;
   border: 1px solid var(--el-border-color);
   border-top-color: transparent;
-  background-color: white;
+  border-bottom-color: transparent;
   display: flex;
-  width: fit-content;
   align-items: center;
-  position: relative;
   cursor: pointer;
 }
 
-.title-text {
-  text-align: center;
-  display: table-cell;
-  vertical-align: middle;
-  font-size: 14px;
-  padding: 0 1rem;
-}
-
-.title-text-table {
-  display: table;
-  height: 100%;
-  width: 100%;
-}
-
-.parent-dialog:hover .title-text {
-  color: $app-primary-color;
-}
-
-.title:hover,
+.tab:hover,
 .active-tab {
   background-color: #f9f2fc;
-  border: solid #8300bf;
-  border-width: 1px 1px .125em;
+  border: 1px solid #8300bf;
   color: #8300bf;
   font-weight: 500;
 }
 
-.highlightText {
-  color: $app-primary-color;
+.tab-title {
+  text-align: center;
+  font-size: 14px;
+  padding: 0 1rem;
 }
 
-.button-tab-close {
+.tab-close-icon {
   width: 20px !important;
   height: 20px !important;
-  line-height: 20px !important;
-  padding: 0 !important;
+  font-size: 20px !important;
   padding-right: 4px !important;
-  font-size: 24px !important;
   color: $app-primary-color !important;
-  border: 0 none !important;
-  box-shadow: none !important;
-  outline: none !important;
-  background-color: transparent !important;
-
-  :deep(> span) {
-    height: $tab-height - 2 !important; // tab height minus border
-    font-family: Arial !important; // to fix font alignment on different browsers
-  }
-
-  &:hover,
-  &:focus {
-    border: 0 none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    background-color: transparent !important;
-  }
-}
-
-.visually-hidden {
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
 }
 </style>

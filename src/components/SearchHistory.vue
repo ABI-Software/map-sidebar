@@ -170,6 +170,12 @@ export default {
     Tag,
     Select
   },
+  props: {
+    localStorageKey: {
+      type: String,
+      default: '',
+    },
+  },
   data() {
     return {
       searchHistory: [],
@@ -186,16 +192,14 @@ export default {
   },
   methods: {
     getSearchHistory() {
-      if (localStorage.getItem('sparc.science-sidebar-search-history')) {
-        this.searchHistory = JSON.parse(
-          localStorage.getItem('sparc.science-sidebar-search-history')
-        )
+      if (localStorage.getItem(this.localStorageKey)) {
+        this.searchHistory = JSON.parse(localStorage.getItem(this.localStorageKey))
       } else {
         this.searchHistory = []
       }
     },
     clearSearchHistory() {
-      localStorage.removeItem('sparc.science-sidebar-search-history')
+      localStorage.removeItem(this.localStorageKey)
       this.searchHistory = []
     },
     sortFilters(a, b) {
@@ -263,10 +267,7 @@ export default {
         this.trimSearchHistory();
 
         // Save new data
-        localStorage.setItem(
-          'sparc.science-sidebar-search-history',
-          JSON.stringify(this.searchHistory)
-        );
+        localStorage.setItem(this.localStorageKey, JSON.stringify(this.searchHistory));
       }
     },
     /**
@@ -356,10 +357,7 @@ export default {
       this.trimSearchHistory();
 
       // Save updated data
-      localStorage.setItem(
-        'sparc.science-sidebar-search-history',
-        JSON.stringify(this.searchHistory)
-      )
+      localStorage.setItem(this.localStorageKey, JSON.stringify(this.searchHistory))
     },
     search: function (item) {
       this.$emit('search', item)
