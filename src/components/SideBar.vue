@@ -308,8 +308,8 @@ export default {
      * To receive error message for connectivity graph
      * @param {String} errorMessage
      */
-    updateConnectivityGraphError: function (errorInfo) {
-      EventBus.emit('connectivity-graph-error', errorInfo);
+    updateConnectivityError: function (errorInfo) {
+      EventBus.emit('connectivity-error', errorInfo);
     },
     /**
      * Store available anatomy facets data for connectivity list component
