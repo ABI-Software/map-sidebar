@@ -1,39 +1,5 @@
 <template>
   <div v-if="entry" class="main">
-    <div v-if="connectivityEntry.length > 1 && !entryId" class="toggle-button">
-      <el-popover
-        width="auto"
-        trigger="hover"
-        :teleported="false"
-      >
-        <template #reference>
-          <el-button
-            class="button"
-            @click="previous"
-            :disabled="this.entryIndex === 0"
-          >
-            Previous
-          </el-button>
-        </template>
-        <span>{{ previousLabel }}</span>
-      </el-popover>
-      <el-popover
-        width="auto"
-        trigger="hover"
-        :teleported="false"
-      >
-        <template #reference>
-          <el-button
-            class="button"
-            @click="next"
-            :disabled="this.entryIndex === this.connectivityEntry.length - 1"
-          >
-            Next
-          </el-button>
-        </template>
-        <span>{{ nextLabel }}</span>
-      </el-popover>
-    </div>
     <!-- Connectivity Info Title -->
     <div class="connectivity-info-title">
       <div class="title-content">
@@ -259,7 +225,6 @@ export default {
   },
   data: function () {
     return {
-      entryIndex: 0,
       updatedCopyContent: '',
       activeView: 'listView',
       connectivityLoading: false,
@@ -271,24 +236,9 @@ export default {
   },
   computed: {
     entry: function () {
-      if (this.entryId) {
-        return this.connectivityEntry.filter((entry) => {
-          return entry.featureId[0] === this.entryId;
-        })[this.entryIndex];
-      }
-      return this.connectivityEntry[this.entryIndex];
-    },
-    previousLabel: function () {
-      if (this.entryIndex === 0) {
-        return "This is the first item. Click 'Next' to see more information.";
-      }
-      return this.connectivityEntry[this.entryIndex - 1].title;
-    },
-    nextLabel: function () {
-      if (this.entryIndex === this.connectivityEntry.length - 1) {
-        return "This is the last item. Click 'Previous' to see more information.";
-      }
-      return this.connectivityEntry[this.entryIndex + 1].title;
+      return this.connectivityEntry.find((entry) => {
+        return entry.featureId[0] === this.entryId;
+      });
     },
     hasProvenanceTaxonomyLabel: function () {
       return (
@@ -361,16 +311,6 @@ export default {
     },
   },
   methods: {
-    previous: function () {
-      if (this.entryIndex !== 0) {
-        this.entryIndex = this.entryIndex - 1;
-      }
-    },
-    next: function () {
-      if (this.entryIndex !== this.connectivityEntry.length - 1) {
-        this.entryIndex = this.entryIndex + 1;
-      }
-    },
     titleCase: function (title) {
       return titleCase(title)
     },

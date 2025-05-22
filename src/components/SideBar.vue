@@ -49,12 +49,13 @@
                 :envVars="envVars"
                 :connectivityEntry="connectivityEntry"
                 :availableAnatomyFacets="availableAnatomyFacets"
+                @filter-visibility="$emit('filter-visibility', $event)"
                 @search-changed="searchChanged(tab.id, $event)"
                 @hover-changed="hoverChanged($event)"
                 @show-connectivity="showConnectivity"
                 @show-reference-connectivities="onShowReferenceConnectivities"
                 @connectivity-hovered="onConnectivityHovered"
-                @connectivity-explorer-clicked="onConnectivityExplorerClicked"
+                @connectivity-collapse-change="onConnectivityCollapseChange"
               />
             </template>
             <template v-else>
@@ -173,8 +174,8 @@ export default {
     }
   },
   methods: {
-    onConnectivityExplorerClicked: function (data) {
-      this.$emit('connectivity-explorer-clicked', data)
+    onConnectivityCollapseChange: function (data) {
+      this.$emit('connectivity-collapse-change', data)
     },
     /**
      * This event is emitted when the mouse hover are changed.

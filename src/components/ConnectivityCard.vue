@@ -48,7 +48,7 @@ export default {
     },
     cardClicked: function (data) {
       if (!this.loading) {
-        this.$emit("connectivity-explorer-clicked", data);
+        this.$emit("open-connectivity", data);
       }
     },
   },
