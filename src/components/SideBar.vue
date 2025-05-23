@@ -233,6 +233,12 @@ export default {
         connectivityExplorerTabRef.openSearch(facets, query);
       })
     },
+    resetConnectivitySearch: function () {
+      this.$nextTick(() => {
+        const connectivityExplorerTabRef = this.getTabRef(undefined, 'connectivityExplorer', false);
+        connectivityExplorerTabRef.openSearch([], '');
+      })
+    },
     openSearch: function (facets, query) {
       this.drawerOpen = true
       // Because refs are in v-for, nextTick is needed here
