@@ -31,7 +31,7 @@
       @hover-changed="hoverChanged($event)"
       @connectivity-hovered="onConnectivityHovered"
       @actionClick="action"
-      @connectivity-explorer-clicked="onConnectivityExplorerClicked"
+      @connectivity-collapse-change="onConnectivityCollapseChange"
     />
   </div>
 </template>
@@ -344,7 +344,7 @@ export default {
       const filter = entry ? entry.filter : []
       this.$refs.sideBar.openConnectivitySearch(filter, query)
     },
-    onConnectivityExplorerClicked: function () {
+    onConnectivityCollapseChange: function () {
       this.connectivityEntry = [...exampleConnectivityInput]
     }
   },
