@@ -1,7 +1,7 @@
 <template>
   <el-card :body-style="bodyStyle" class="content-card">
     <template #header>
-      <div class="header">
+      <div class="header" @mouseleave="hoverChanged(undefined)">
         <el-input
           class="search-input"
           placeholder="Search"
@@ -25,6 +25,14 @@
           size="large"
         >
           Reset
+        </el-button>
+        <el-button
+          link
+          class="el-button-link"
+          @click="onFilterVisibility"
+          size="large"
+        >
+          Filter
         </el-button>
       </div>
     </template>
@@ -66,7 +74,7 @@
         <ConnectivityCard
           class="dataset-card"
           :entry="result"
-          @connectivity-card-clicked="onConnectivityExplorerClicked"
+          @open-connectivity="onConnectivityCollapseChange"
         />
         <ConnectivityInfo
           v-if="expanded === result.id"
@@ -75,12 +83,12 @@
           :availableAnatomyFacets="availableAnatomyFacets"
           :envVars="envVars"
           :withCloseButton="true"
-          @show-connectivity="$emit('show-connectivity', $event)"
-          @show-reference-connectivities="$emit('show-reference-connectivities', $event)"
+          @show-connectivity="onShowConnectivity"
+          @show-reference-connectivities="onShowReferenceConnectivities"
           @connectivity-clicked="onConnectivityClicked"
           @connectivity-hovered="$emit('connectivity-hovered', $event)"
           @loaded="onConnectivityInfoLoaded(result)"
-          @close-connectivity="closeConnectivity(result)"
+          @close-connectivity="onConnectivityCollapseChange(result)"
         />
       </div>
       <el-pagination
@@ -192,9 +200,11 @@ export default {
         },
       ],
       cascaderIsReady: false,
-      displayConnectivity: false,
+      freezeTimeout: undefined,
+      freezed: false,
       initLoading: true,
-      expanded: ""
+      expanded: "",
+      filterVisibility: true
     };
   },
   computed: {
@@ -212,24 +222,19 @@ export default {
     },
   },
   watch: {
-    connectivityKnowledge: function (value, oldValue) {
-      this.expanded = '';
+    connectivityKnowledge: function (newVal, oldVal) {
+      this.expanded = ""; // reset expanded state
+      this.filterVisibility = true; // reset filter visibility
       this.initLoading = false;
       this.loadingCards = false;
-
-      if (JSON.stringify(value) === JSON.stringify(oldValue)) {
-        return;
-      }
-
-      this.results = value.map((item) => {
-        return {
-          ...item,
-          loaded: false,
-        };
-      });
-      this.numberOfHits = this.results.length;
-      if (this.numberOfHits === 1) {
-        this.onConnectivityExplorerClicked(this.results[0]);
+      if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
+        this.results = newVal.map((item) => {
+          return { ...item, loaded: false };
+        });
+        this.numberOfHits = this.results.length;
+        if (this.numberOfHits === 1) {
+          this.onConnectivityCollapseChange(this.results[0]);
+        }
       }
     },
     paginatedResults: function () {
@@ -237,30 +242,46 @@ export default {
     },
   },
   methods: {
+    onFilterVisibility: function () {
+      this.filterVisibility = !this.filterVisibility;
+      this.$emit('filter-visibility', this.filterVisibility);
+    },
+    freezeHoverChange: function () {
+      this.freezed = true;
+      if (this.freezeTimeout) {
+        clearTimeout(this.freezeTimeout);
+      }
+      this.freezeTimeout = setTimeout(() => {
+        this.freezed = false;
+      }, 3000)
+    },
+    onShowConnectivity: function (data) {
+      this.freezeHoverChange();
+      this.$emit('show-connectivity', data);
+    },
+    onShowReferenceConnectivities: function (data) {
+      this.freezeHoverChange();
+      this.$emit('show-reference-connectivities', data);
+    },
     onConnectivityClicked: function (data) {
       this.searchInput = data.query;
       this.filters = data.filter;
       this.searchAndFilterUpdate();
     },
-    openConnectivity: function (data) {
-      this.expanded = data.id;
-    },
-    closeConnectivity: function (data) {
-      this.expanded = '';
-    },
-    onConnectivityExplorerClicked: function (data) {
-      if (this.expanded !== data.id) {
-        data.loaded = false; // reset loading
-        this.openConnectivity(data);
-        const entry = this.connectivityEntry.filter(entry => entry.featureId[0] === data.id);
-        if (entry.length === 0) {
-          this.$emit("connectivity-explorer-clicked", data);
-        }
+    onConnectivityCollapseChange: function (data) {
+      data.loaded = false; // reset loading
+      this.expanded = this.expanded === data.id ? "" : data.id;
+      // close connectivity event will not trigger emit
+      if (!this.connectivityEntry.find(entry => entry.featureId[0] === data.id)) {
+        this.$emit("connectivity-collapse-change", data);
       }
     },
     hoverChanged: function (data) {
-      const payload = data ? { ...data, type: "connectivity" } : data;
-      this.$emit("hover-changed", payload);
+      // disable hover changes when show connectivity is clicked
+      if (!this.freezed) {
+        const payload = data ? { ...data, type: "connectivity" } : data;
+        this.$emit("hover-changed", payload);
+      }
     },
     resetSearch: function () {
       this.numberOfHits = 0;
