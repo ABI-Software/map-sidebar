@@ -109,6 +109,7 @@ import {
   ElInput as Input,
   ElPagination as Pagination,
 } from "element-plus";
+import EventBus from './EventBus.js'
 import SearchFilters from "./SearchFilters.vue";
 import SearchHistory from "./SearchHistory.vue";
 import ConnectivityCard from "./ConnectivityCard.vue";
@@ -433,6 +434,10 @@ export default {
   mounted: function () {
     localStorage.removeItem('connectivity-active-view');
     this.openSearch(this.filter, this.searchInput);
+
+    EventBus.on('close-connectivity', () => {
+      this.closeConnectivity();
+    });
   },
 };
 </script>
