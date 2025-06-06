@@ -50,7 +50,7 @@
                 :connectivityEntry="connectivityEntry"
                 :availableAnatomyFacets="availableAnatomyFacets"
                 @search-changed="searchChanged(tab.id, $event)"
-                @hover-changed="hoverChanged($event)"
+                @hover-changed="hoverChanged(tab.id, $event)"
                 @show-connectivity="showConnectivity"
                 @show-reference-connectivities="onShowReferenceConnectivities"
                 @connectivity-hovered="onConnectivityHovered"
@@ -65,7 +65,7 @@
                 :envVars="envVars"
                 :ref="'datasetExplorerTab_' + tab.id"
                 @search-changed="searchChanged(tab.id, $event)"
-                @hover-changed="hoverChanged($event)"
+                @hover-changed="hoverChanged(tab.id, $event)"
               />
             </template>
           </template>
@@ -180,8 +180,8 @@ export default {
      * This event is emitted when the mouse hover are changed.
      * @arg data
      */
-    hoverChanged: function (data) {
-      this.$emit('hover-changed', data)
+    hoverChanged: function (id, data) {
+      this.$emit('hover-changed', {...data,  tabId: id })
     },
     /**
      * This event is emitted when the show connectivity button is clicked.
@@ -209,7 +209,7 @@ export default {
      * @arg `obj` {data, id}
      */
     searchChanged: function (id, data) {
-      this.$emit('search-changed', { ...data, id: id })
+      this.$emit('search-changed', { ...data, tabId: id })
     },
     /**
      * The function to close sidebar.

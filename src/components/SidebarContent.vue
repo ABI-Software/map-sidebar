@@ -174,7 +174,7 @@ export default {
   },
   methods: {
     hoverChanged: function (data) {
-      const payload = data ? { ...data, type: 'dataset' } : data
+      const payload = data ? { ...data, tabType: 'dataset' } : { tabType: 'dataset' }
       this.$emit('hover-changed', payload)
     },
     resetSearch: function () {
@@ -253,6 +253,7 @@ export default {
       this.searchAndFilterUpdate();
       this.$emit('search-changed', {
         value: filters,
+        tabType: "dataset",
         type: 'filter-update',
       })
     },
@@ -308,6 +309,7 @@ export default {
           this.scrollToTop()
           this.$emit('search-changed', {
             value: this.searchInput,
+            tabType: "dataset",
             type: 'query-update',
           })
           if (this._abortController) this._abortController.abort()
