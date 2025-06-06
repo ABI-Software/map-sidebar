@@ -161,6 +161,10 @@ export default {
       type: Object,
       default: [],
     },
+    connectivityFilterOptions: {
+      type: Array,
+      default: [],
+    },
   },
   data: function () {
     return {
@@ -170,30 +174,6 @@ export default {
         "flex-flow": "column",
         display: "flex",
       },
-      filterOptions: [
-        {
-          id: 3,
-          key: "flatmap.connectivity.source",
-          label: "Connectivity",
-          children: [
-            {
-              facetPropPath: "flatmap.connectivity.source",
-              id: 0,
-              label: "Origins",
-            },
-            {
-              facetPropPath: "flatmap.connectivity.source",
-              id: 1,
-              label: "Components",
-            },
-            {
-              facetPropPath: "flatmap.connectivity.source",
-              id: 2,
-              label: "Destinations",
-            },
-          ],
-        },
-      ],
       cascaderIsReady: false,
       displayConnectivity: false,
       initLoading: true,
@@ -206,8 +186,8 @@ export default {
       return {
         numberOfHits: this.numberOfHits,
         filterFacets: this.filter,
-        options: this.filterOptions,
-        showFilters: false
+        options: this.connectivityFilterOptions,
+        showFilters: true
       };
     },
     paginatedResults: function () {
@@ -277,7 +257,10 @@ export default {
       this.loadingCards = false;
     },
     resetSearchIfNoActiveSearch: function() {
-      if (!this.searchInput) this.openSearch([], '');
+      const hasValidFacet = this.filter.some(f => f.facet !== "Show all");
+      if (!this.searchInput && !hasValidFacet) {
+        this.openSearch([], '');
+      }
     },
     openSearch: function (filter, search = "", option = { withSearch: true }) {
       this.searchInput = search;
@@ -302,6 +285,7 @@ export default {
             this.searchKnowledge(this.filter, search);
           }
           this.$refs.filtersRef.setCascader(this.filter);
+          this.searchHistoryUpdate(this.filter, search);
         }
       } else {
         //cascader is not ready, perform search if no filter is set,
@@ -309,6 +293,7 @@ export default {
         this.filter = filter;
         if ((!filter || filter.length == 0) && option.withSearch) {
           this.searchKnowledge(this.filter, search);
+          this.searchHistoryUpdate(this.filter, search);
         }
       }
     },
@@ -334,24 +319,20 @@ export default {
     clearSearchClicked: function () {
       this.searchInput = "";
       this.searchAndFilterUpdate();
-      this.$refs.filtersRef.checkShowAllBoxes();
     },
     searchEvent: function (event = false) {
       if (event.keyCode === 13 || event instanceof MouseEvent) {
         this.searchInput = this.searchInput.trim();
         this.searchAndFilterUpdate();
-        if (!this.searchInput) {
-          this.$refs.filtersRef.checkShowAllBoxes();
-        }
       }
     },
     filterUpdate: function (filters) {
       this.filters = [...filters];
       this.searchAndFilterUpdate();
-      this.$emit("search-changed", {
-        value: filters,
-        type: "filter-update",
-      });
+      // this.$emit("search-changed", {
+      //   value: filters,
+      //   type: "filter-update",
+      // });
     },
     /**
      * Transform filters for third level items to perform search
@@ -368,29 +349,30 @@ export default {
     },
     searchAndFilterUpdate: function () {
       this.resetPageNavigation();
-      const transformedFilters = this.transformFiltersBeforeSearch(
-        this.filters
-      );
+      const transformedFilters = this.transformFiltersBeforeSearch(this.filters);
       this.searchKnowledge(transformedFilters, this.searchInput);
+      this.searchHistoryUpdate(this.filters, this.searchInput);
     },
     searchHistoryUpdate: function (filters, search) {
       this.$refs.searchHistory.selectValue = 'Search history';
       // save history only if there has value
-      if (search?.trim()) {
+      if (filters.length || search?.trim()) {
+        const transformedFilters = this.transformFiltersBeforeSearch(filters);
         this.$refs.searchHistory.addSearchToHistory(
-          filters,
+          transformedFilters,
           search
         );
       }
     },
     searchKnowledge: function (filters, query = "") {
       this.expanded = "";
-      this.searchHistoryUpdate(filters, query);
       this.loadingCards = true;
       this.scrollToTop();
       this.$emit("search-changed", {
-        value: this.searchInput,
-        type: "query-update",
+        // value: this.searchInput,
+        // type: "query-update",
+        query: query,
+        filter: filters,
       });
       this.lastSearch = query;
     },
@@ -419,6 +401,8 @@ export default {
       this.searchInput = item.search;
       this.filters = item.filters;
       this.searchAndFilterUpdate();
+      // withSearch: false to prevent knowledgeSearch in openSearch
+      this.openSearch([...item.filters], item.search, { withSearch: false });
     },
     onConnectivityInfoLoaded: function (result) {
       const stepItemRef = this.$refs['stepItem-' + result.id];

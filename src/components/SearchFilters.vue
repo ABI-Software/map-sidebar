@@ -1,7 +1,7 @@
 <template>
   <div class="filters">
     <MapSvgSpriteColor />
-    <div v-show="showFilters">
+    <div v-if="showFilters">
       <div class="cascader-tag" v-if="presentTags.length > 0">
         <el-tag
           class="ml-2"
@@ -131,6 +131,9 @@ const convertReadableLabel = function (original) {
   if (speciesMap[name]) {
     return capitalise(speciesMap[name])
   } else {
+    if (original === original.toUpperCase()) {
+      return original
+    }
     return capitalise(name)
   }
 }
@@ -202,6 +205,27 @@ export default {
       return this.entry.showFilters
     }
   },
+  watch: {
+    entry: {
+      deep: true,
+      immediate: true,
+      handler: function (newVal, oldVal) {
+        if (JSON.stringify(newVal?.options) !== JSON.stringify(oldVal?.options)) {
+          this.options = []
+          this.filters = []
+          this.cascaderIsReady = false
+          // Populate the cascader with new options
+          this.populateCascader().then(() => {
+            this.cascaderIsReady = true
+            this.checkShowAllBoxes()
+            // this.setCascader(this.entry.filterFacets)
+            this.cssMods()
+            this.$emit('cascaderReady')
+          })
+        }
+      },
+    },
+  },
   methods: {
     createCascaderItemValue: function (
       term,
@@ -228,11 +252,13 @@ export default {
           undefined
         )
 
-        // put "Show all" as first option
-        this.options[i].children.unshift({
-          value: this.createCascaderItemValue('Show all'),
-          label: 'Show all',
-        })
+        if (!this.options[i].children.find((child) => child.label === 'Show all')) {
+          // put "Show all" as first option
+          this.options[i].children.unshift({
+            value: this.createCascaderItemValue('Show all'),
+            label: 'Show all',
+          })
+        }
 
         // populate second level of options
         this.options[i].children.forEach((facetItem, j) => {

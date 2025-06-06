@@ -49,6 +49,7 @@
                 :envVars="envVars"
                 :connectivityEntry="connectivityEntry"
                 :availableAnatomyFacets="availableAnatomyFacets"
+                :connectivityFilterOptions="filterOptions"
                 @search-changed="searchChanged(tab.id, $event)"
                 @hover-changed="hoverChanged($event)"
                 @show-connectivity="showConnectivity"
@@ -161,6 +162,10 @@ export default {
       },
     },
     connectivityKnowledge: {
+      type: Array,
+      default: [],
+    },
+    filterOptions: {
       type: Array,
       default: [],
     },
