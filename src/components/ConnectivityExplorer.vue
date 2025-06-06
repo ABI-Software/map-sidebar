@@ -301,6 +301,9 @@ export default {
           if (option.withSearch) {
             this.searchKnowledge(this.filter, search);
           }
+          if (filter.length === 0) {
+            this.filters = this.filter;
+          }
           this.$refs.filtersRef.setCascader(this.filter);
         }
       } else {

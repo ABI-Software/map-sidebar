@@ -104,7 +104,6 @@ var handleErrors = async function (response) {
 }
 
 var initial_state = {
-  filters: [],
   searchInput: '',
   lastSearch: '',
   results: [],
@@ -184,7 +183,7 @@ export default {
       this.results = []
       this.loadingCards = false
     },
-    openSearch: function (filter, search = '', option = { withSearch: true }) {
+    openSearch: function (filter, search = '') {
       this.searchInput = search
       this.resetPageNavigation()
       //Proceed normally if cascader is ready
@@ -203,9 +202,7 @@ export default {
           this.$refs.filtersRef.checkShowAllBoxes()
           this.resetSearch()
         } else if (this.filter) {
-          if (option.withSearch) {
-            this.searchAlgolia(this.filter, search)
-          }
+          this.searchAlgolia(this.filter, search)
           this.$refs.filtersRef.setCascader(this.filter)
           this.searchHistoryUpdate(this.filter, search);
         }
@@ -213,7 +210,7 @@ export default {
         //cascader is not ready, perform search if no filter is set,
         //otherwise waith for cascader to be ready
         this.filter = filter
-        if ((!filter || filter.length == 0) && option.withSearch) {
+        if (!filter || filter.length == 0) {
           this.searchAlgolia(this.filter, search)
           this.searchHistoryUpdate(this.filter, search);
         }
@@ -249,46 +246,27 @@ export default {
       }
     },
     filterUpdate: function (filters) {
-      this.filters = [...filters]
+      this.filter = [...filters]
       this.searchAndFilterUpdate();
       this.$emit('search-changed', {
         value: filters,
         type: 'filter-update',
       })
     },
-    /**
-     * Transform filters for third level items to perform search
-     * because cascader keeps adding it back.
-     */
-    transformFiltersBeforeSearch: function (filters) {
-      return filters.map((filter) => {
-        if (filter.facet2) {
-          filter.facet = filter.facet2;
-          delete filter.facet2;
-        }
-        return filter;
-      });
-    },
     searchAndFilterUpdate: function () {
       this.resetPageNavigation();
-      const transformedFilters = this.transformFiltersBeforeSearch(this.filters);
-      this.searchAlgolia(transformedFilters, this.searchInput);
-      this.searchHistoryUpdate(this.filters, this.searchInput);
+      this.searchAlgolia(this.filter, this.searchInput);
+      this.searchHistoryUpdate(this.filter, this.searchInput);
     },
     searchHistoryUpdate: function (filters, search) {
       this.$refs.searchHistory.selectValue = 'Search history';
       // save history only if there has value
       if (filters.length || search?.trim()) {
-        const transformedFilters = this.transformFiltersBeforeSearch(filters);
-        this.$refs.searchHistory.addSearchToHistory(
-          transformedFilters,
-          search
-        );
+        this.$refs.searchHistory.addSearchToHistory(filters, search);
       }
     },
     searchAlgolia(filters, query = '') {
       // Algolia search
-
       this.loadingCards = true
       this.algoliaClient
         .anatomyInSearch(getFilters(filters), query)
@@ -328,7 +306,7 @@ export default {
       this.start = (page - 1) * this.numberPerPage
       this.page = page
       this.searchAlgolia(
-        this.filters,
+        this.filter,
         this.searchInput,
         this.numberPerPage,
         this.page
@@ -476,10 +454,8 @@ export default {
     },
     searchHistorySearch: function (item) {
       this.searchInput = item.search
-      this.filters = item.filters
-      this.searchAndFilterUpdate();
-      // withSearch: false to prevent algoliaSearch in openSearch
-      this.openSearch([...item.filters], item.search, { withSearch: false });
+      this.filter = item.filters
+      this.openSearch([...item.filters], item.search);
     },
   },
   mounted: function () {

@@ -488,13 +488,6 @@ export default {
             }
           })
 
-        // if all checkboxes are checked
-        // there has no filter values
-        const filtersLength = filters.filter((item) => item.facet !== 'Show all');
-        if (!filtersLength.length) {
-          filters = [];
-        }
-
         // timeout: add delay for filter checkboxes
         if (this.filterTimeout) {
           clearTimeout(this.filterTimeout);

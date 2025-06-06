@@ -215,24 +215,12 @@ export default {
       }
       return 0;
     },
-    formatFilters(filterItem) {
-      // because filters do not work correctly with facet2
-      if (filterItem.facet2) {
-        filterItem.facet = filterItem.facet2;
-        delete filterItem.facet2;
-      }
-      return filterItem;
-    },
     addSearchToHistory(filters = [], search = '') {
       search = search.trim() // remove whitespace
 
       const isExistingItem = this.searchHistory.some((item) => {
         let historyFilters = item.filters;
         let newFilters = filters;
-
-        // make all filters same format
-        historyFilters.forEach((filter) => this.formatFilters(filter));
-        newFilters.forEach((filter) => this.formatFilters(filter));
 
         // sort filters (to check duplicates in string format)
         historyFilters = historyFilters.sort(this.sortFilters);
@@ -333,11 +321,6 @@ export default {
           item['longLabel'] = longLabel;
         }
 
-        // make all filters same format
-        item.filters.forEach((filter) =>
-          this.formatFilters(filter)
-        );
-
         // sort filters (to check duplicates in string format)
         item.filters = item.filters.sort(this.sortFilters);
 
@@ -372,7 +355,7 @@ export default {
 
       if (filters) {
         filterItems = filters.filter((filterItem) => filterItem.facet !== 'Show all');
-        filterLabels = filterItems.map((item) => item.facet2 || item.facet);
+        filterLabels = filterItems.map((item) => item.facet);
       }
 
       if (label && filterItems.length) {
