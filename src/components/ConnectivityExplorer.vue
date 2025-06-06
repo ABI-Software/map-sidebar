@@ -255,6 +255,10 @@ export default {
     collapseChange:function (data) {
       this.expanded = this.expanded === data.id ? "" : data.id;
     },
+    closeConnectivity: function (data) {
+      this.expanded = '';
+      this.$emit('connectivity-item-close');
+    },
     onConnectivityCollapseChange: function (data) {
       // close connectivity event will not trigger emit
       if (this.connectivityEntry.find(entry => entry.featureId[0] === data.id)) {
