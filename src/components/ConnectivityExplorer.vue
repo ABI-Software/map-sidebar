@@ -2,7 +2,7 @@
   <el-card
     :body-style="bodyStyle"
     class="content-card"
-    @mouseleave="hoverChanged(undefined)"
+    @mouseleave="onHoverChanged($event, undefined)"
   >
     <template #header>
       <div class="header">
@@ -51,7 +51,7 @@
       class="content scrollbar"
       v-loading="loadingCards || initLoading"
       ref="content"
-      @mouseleave="hoverChanged(undefined)"
+      @mouseleave="onHoverChanged($event, undefined)"
     >
       <div class="error-feedback" v-if="results.length === 0 && !loadingCards">
         No results found - Please change your search / filter criteria.
@@ -61,7 +61,7 @@
         :key="result.id"
         :ref="'stepItem-'  + result.id"
         class="step-item"
-        @mouseenter="hoverChanged(result)"
+        @mouseenter="onHoverChanged($event, result)"
       >
         <ConnectivityCard
           v-show="expanded !== result.id"
@@ -260,6 +260,15 @@ export default {
         this.$nextTick(() => {
           this.$emit("connectivity-collapse-change", data);
         });
+      }
+    },
+    onHoverChanged: function (event, data) {
+      const { target } = event;
+
+      // mouseleave event won't trigger if the connectivity explorer tab is not in view
+      // e.g., switching to annotation tab on item click
+      if (data || (target && target.checkVisibility())) {
+        this.hoverChanged(data)
       }
     },
     hoverChanged: function (data) {
