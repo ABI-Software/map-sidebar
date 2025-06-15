@@ -76,6 +76,7 @@ export default {
   data: function () {
     return {
       ElIconDelete: shallowRef(ElIconDelete),
+      annotationPopupData: null,
     };
   },
 }
