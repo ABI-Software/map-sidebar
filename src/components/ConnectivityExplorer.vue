@@ -222,10 +222,17 @@ export default {
     // watch for connectivityEntry changes
     // card should be expanded if there is only one entry and it is ready
     connectivityEntry: function (newVal, oldVal) {
-      if (newVal.length === 1 && newVal[0].ready) {
-        // if the changed property is connectivity source, do not collapse
+      if (
+        JSON.stringify(newVal) !== JSON.stringify(oldVal) &&
+        newVal.length === 1 && newVal[0].ready
+      ) {
+        // if the changed property is connectivity source,
+        // or two different maps in split view, do not collapse
         if (
-          (newVal[0].connectivitySource !== oldVal[0].connectivitySource) &&
+          (
+            newVal[0].connectivitySource !== oldVal[0].connectivitySource ||
+            newVal[0].mapId !== oldVal[0].mapId
+          ) &&
           oldVal[0].ready
         ) {
           return;
