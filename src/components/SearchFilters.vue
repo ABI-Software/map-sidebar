@@ -61,7 +61,20 @@
             @expand-change="cascadeExpandChange"
             :show-all-levels="true"
             popper-class="sidebar-cascader-popper"
-          />
+          >
+            <template #default="{ node, data }">
+              <el-row>
+                <el-col :span="4" v-if="hasLineStyles(data)">
+                  <div class="path-visual" :style="getLineStyles(data)"></div>
+                </el-col>
+                <el-col :span="20">
+                  <div :style="getBackgroundStyles(data)">
+                    {{ data.label }}
+                  </div>
+                </el-col>
+              </el-row>
+            </template>
+          </el-cascader>
           <div v-if="showFiltersText" class="filter-default-value">Filters</div>
           <el-popover
             title="How do filters work?"
@@ -851,6 +864,26 @@ export default {
       }
       return []
     },
+    hasLineStyles: function(item) {
+      return 'colour' in item && item.colourStyle === 'line'
+    },
+    getLineStyles: function (item) {
+      if ('colour' in item && item.colourStyle === 'line') {
+        if ('dashed' in item && item.dashed === true) {
+          const background = `repeating-linear-gradient(90deg,${item.colour},${item.colour} 6px,transparent 0,transparent 9px)`
+          return { background }
+        } else {
+          return { background: item.colour }
+        }
+      }
+      return { display: 'None' }
+    },
+    getBackgroundStyles: function (item) {
+      if ('colour' in item && item.colourStyle === 'background') {
+        return { background: item.colour }
+      }
+      return {}
+    },
   },
   mounted: function () {
     this.algoliaClient = markRaw(new AlgoliaClient(
@@ -1079,5 +1112,12 @@ export default {
     border-bottom-color: transparent !important;
     border-right-color: transparent !important;
   }
+}
+.path-visual {
+  margin: 3px 0;
+  height: 3px;
+  width: 25px;
+  margin-right: 5px;
+  display: inline-block;
 }
 </style>

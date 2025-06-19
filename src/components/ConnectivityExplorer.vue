@@ -1,9 +1,5 @@
 <template>
-  <el-card
-    :body-style="bodyStyle"
-    class="content-card"
-    @mouseleave="onHoverChanged($event, undefined)"
-  >
+  <el-card :body-style="bodyStyle" class="content-card">
     <template #header>
       <div class="header">
         <el-input
@@ -293,7 +289,7 @@ export default {
     },
     resetSearchIfNoActiveSearch: function() {
       const hasValidFacet = this.filter.some(f => f.facet !== "Show all");
-      if (!this.searchInput && !hasValidFacet) {
+      if ((!this.searchInput && !hasValidFacet) || this.numberOfHits === 0) {
         this.openSearch([], '');
       }
     },
