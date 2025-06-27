@@ -296,7 +296,7 @@ export default {
     },
     resetSearchIfNoActiveSearch: function() {
       const hasValidFacet = this.filter.some(f => f.facet !== "Show all");
-      if ((!this.searchInput && !hasValidFacet) || this.numberOfHits === 0) {
+      if (!this.searchInput && !hasValidFacet) {
         this.openSearch([], '');
       }
     },
