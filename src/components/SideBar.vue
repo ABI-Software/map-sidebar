@@ -50,7 +50,9 @@
                 :envVars="envVars"
                 :connectivityEntry="connectivityEntry"
                 :availableAnatomyFacets="availableAnatomyFacets"
+                @filter-visibility="$emit('filter-visibility', $event)"
                 :connectivityFilterOptions="filterOptions"
+                :showVisibilityFilter="showVisibilityFilter"
                 @search-changed="searchChanged(tab.id, $event)"
                 @hover-changed="hoverChanged(tab.id, $event)"
                 @show-connectivity="showConnectivity"
@@ -171,6 +173,10 @@ export default {
       type: Array,
       default: [],
     },
+    showVisibilityFilter: {
+      type: Boolean,
+      default: false,
+    }
   },
   data: function () {
     return {

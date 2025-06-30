@@ -27,6 +27,7 @@
       :createData="createData"
       :connectivityEntry="connectivityEntry"
       :connectivityKnowledge="connectivityKnowledge"
+      :showVisibilityFilter="true"
       @search-changed="searchChanged($event)"
       @hover-changed="hoverChanged($event)"
       @connectivity-hovered="onConnectivityHovered"
