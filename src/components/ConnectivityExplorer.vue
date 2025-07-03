@@ -1,5 +1,6 @@
 <template>
   <el-card :body-style="bodyStyle" class="content-card">
+    <MapSvgSpriteColor />
     <template #header>
       <div class="header">
         <el-input
@@ -26,6 +27,33 @@
         >
           Reset
         </el-button>
+        <div v-if="showVisibilityFilter" class="visibility-filter">
+          <el-checkbox
+            v-model="filterVisibility"
+          >
+          Focused
+          </el-checkbox>
+          <el-popover
+            title="How does focused checkbox work?"
+            width="250"
+            trigger="hover"
+            popper-class="filter-help-popover"
+          >
+            <template #reference>
+              <MapSvgIcon icon="help" class="help" />
+            </template>
+            <div>
+              <strong>Checked:</strong>
+              <br />
+              Display listed or highlighted items only.
+              <br />
+              <br />
+              <strong>Unchecked:</strong>
+              <br />
+              Display listed or highlighted items in full colour and non-listed items in greyscale.
+            </div>
+          </el-popover>
+        </div>
       </div>
     </template>
     <SearchFilters
@@ -74,8 +102,8 @@
           :availableAnatomyFacets="availableAnatomyFacets"
           :envVars="envVars"
           :withCloseButton="true"
-          @show-connectivity="$emit('show-connectivity', $event)"
-          @show-reference-connectivities="$emit('show-reference-connectivities', $event)"
+          @show-connectivity="onShowConnectivity"
+          @show-reference-connectivities="onShowReferenceConnectivities"
           @connectivity-clicked="onConnectivityClicked"
           @connectivity-hovered="$emit('connectivity-hovered', $event)"
           @loaded="onConnectivityInfoLoaded(result)"
@@ -101,6 +129,7 @@
 import {
   ElButton as Button,
   ElCard as Card,
+  ElCheckbox as Checkbox,
   ElIcon as Icon,
   ElInput as Input,
   ElPagination as Pagination,
@@ -110,6 +139,7 @@ import SearchFilters from "./SearchFilters.vue";
 import SearchHistory from "./SearchHistory.vue";
 import ConnectivityCard from "./ConnectivityCard.vue";
 import ConnectivityInfo from "./ConnectivityInfo.vue";
+import { MapSvgIcon, MapSvgSpriteColor } from "@abi-software/svg-sprite";
 
 var initial_state = {
   searchInput: "",
@@ -131,9 +161,12 @@ export default {
     ConnectivityInfo,
     Button,
     Card,
+    Checkbox,
     Icon,
     Input,
     Pagination,
+    MapSvgIcon,
+    MapSvgSpriteColor
   },
   name: "ConnectivityExplorer",
   props: {
@@ -161,6 +194,10 @@ export default {
       type: Array,
       default: [],
     },
+    showVisibilityFilter: {
+      type: Boolean,
+      default: false,
+    }
   },
   data: function () {
     return {
@@ -171,9 +208,11 @@ export default {
         display: "flex",
       },
       cascaderIsReady: false,
-      displayConnectivity: false,
+      freezeTimeout: undefined,
+      freezed: false,
       initLoading: true,
       expanded: "",
+      filterVisibility: true,
       expandedData: null,
     };
   },
@@ -239,8 +278,29 @@ export default {
     paginatedResults: function () {
       this.loadingCards = false;
     },
+    filterVisibility: function (state) {
+      this.filterVisibility = state;
+      this.$emit('filter-visibility', this.filterVisibility);
+    },
   },
   methods: {
+    freezeHoverChange: function () {
+      this.freezed = true;
+      if (this.freezeTimeout) {
+        clearTimeout(this.freezeTimeout);
+      }
+      this.freezeTimeout = setTimeout(() => {
+        this.freezed = false;
+      }, 3000)
+    },
+    onShowConnectivity: function (data) {
+      this.freezeHoverChange();
+      this.$emit('show-connectivity', data);
+    },
+    onShowReferenceConnectivities: function (data) {
+      this.freezeHoverChange();
+      this.$emit('show-reference-connectivities', data);
+    },
     onConnectivityClicked: function (data) {
       this.searchInput = data.query;
       this.filter = data.filter;
@@ -279,15 +339,18 @@ export default {
       }
     },
     hoverChanged: function (data) {
-      let payload = { tabType: "connectivity" };
-
-      if (data) {
-        payload = {...payload, ...data};
-      } else if (this.expandedData) {
-        payload = {...payload, ...this.expandedData};
+      // disable hover changes when show connectivity is clicked
+      if (!this.freezed) {
+        let payload = { tabType: "connectivity" };
+  
+        if (data) {
+          payload = {...payload, ...data};
+        } else if (this.expandedData) {
+          payload = {...payload, ...this.expandedData};
+        }
+  
+        this.$emit("hover-changed", payload);
       }
-
-      this.$emit("hover-changed", payload);
     },
     resetSearch: function () {
       this.numberOfHits = 0;
@@ -511,6 +574,9 @@ export default {
 }
 
 .header {
+  display: flex;
+  align-items: center;
+
   .el-button {
     font-family: inherit;
 
@@ -518,7 +584,7 @@ export default {
     &:focus {
       background: $app-primary-color;
       box-shadow: -3px 2px 4px #00000040;
-      color: #fff;
+      color: #ffffff;
     }
   }
 }
@@ -602,10 +668,54 @@ export default {
   background-color: transparent !important;
   padding: 2px !important;
   height: auto !important;
+  margin-left: 4px!important;
 
   &:hover {
     text-decoration-color: transparent;
     box-shadow: none !important;
+  }
+}
+
+.visibility-filter {
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+
+  :deep(.el-checkbox__label) {
+    padding-left: 4px !important;
+    color: #fff !important;
+  }
+
+  :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+    color: #f9f2fc !important;
+  }
+}
+
+.help {
+  width: 24px !important;
+  height: 24px;
+  transform: scale(1.1);
+  cursor: pointer;
+  color: #ffffff !important;
+}
+
+.filter-help-popover {
+  font-family: 'Asap', sans-serif;
+  background: #f3ecf6 !important;
+  border: 1px solid $app-primary-color !important;
+  border-radius: 4px !important;
+  color: #303133 !important;
+  font-size: 12px !important;
+  line-height: 18px !important;
+
+  .el-popper__arrow::before {
+    background: #f3ecf6 !important;
+    border-color: $app-primary-color !important;
+  }
+
+  &[data-popper-placement^=bottom] .el-popper__arrow:before {
+    border-bottom-color: transparent !important;
+    border-right-color: transparent !important;
   }
 }
 </style>
