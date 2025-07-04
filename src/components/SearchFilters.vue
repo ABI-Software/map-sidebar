@@ -56,23 +56,42 @@
             :collapse-tags="true"
             collapse-tags-tooltip
             :options="options"
-            :props="props"
+            :props="cascaderProps"
             @change="cascadeEvent($event)"
             @expand-change="cascadeExpandChange"
             :show-all-levels="true"
             popper-class="sidebar-cascader-popper"
           >
             <template #default="{ node, data }">
-              <el-row>
-                <el-col :span="4" v-if="hasLineStyles(data)">
-                  <div class="path-visual" :style="getLineStyles(data)"></div>
-                </el-col>
-                <el-col :span="20">
-                  <div :style="getBackgroundStyles(data)">
-                    {{ data.label }}
+              <div v-if="isFlatmapConnectionsFilterNode(node)">
+                <div class="sidebar-cascader-search el-input">
+                  <div class="el-input__wrapper">
+                    <input
+                      class="el-input__inner"
+                      :ref="'searchInput_' + node.pathValues[0]"
+                      :value="searchInputs[node.pathValues[0]]"
+                      @input="searchInputChange($event, node)"
+                      @focus="searchInputFocusToggle($event, true)"
+                      @blur="searchInputFocusToggle($event, false)"
+                      style="width: 100%"
+                      autocomplete="off"
+                      placeholder="Search"
+                    />
                   </div>
-                </el-col>
-              </el-row>
+                </div>
+              </div>
+              <div v-else>
+                <el-row>
+                  <el-col :span="4" v-if="hasLineStyles(data)">
+                    <div class="path-visual" :style="getLineStyles(data)"></div>
+                  </el-col>
+                  <el-col :span="20">
+                    <div :style="getBackgroundStyles(data)">
+                      {{ data.label }}
+                    </div>
+                  </el-col>
+                </el-row>
+              </div>
             </template>
           </el-cascader>
           <div v-if="showFiltersText" class="filter-default-value">Filters</div>
@@ -190,7 +209,7 @@ export default {
       filters: [],
       facets: ['Species', 'Gender', 'Organ', 'Datasets'],
       numberDatasetsShown: ['10', '20', '50'],
-      props: { multiple: true },
+      cascaderProps: { multiple: true },
       options: [
         {
           value: 'Species',
@@ -199,6 +218,7 @@ export default {
         },
       ],
       presentTags:[],
+      searchInputs: {},
     }
   },
   setup() {
@@ -254,6 +274,14 @@ export default {
         )
       return value
     },
+    isFlatmapConnectionsFilterNode: function (node) {
+      return (
+        node.pathValues[0].includes('flatmap.connectivity.source') &&
+        node.pathLabels.includes('Filters') &&
+        node.isDisabled &&
+        node.isLeaf
+      )
+    },
     processOptions: function () {
       // create top level of options in cascader
       this.options.forEach((facet, i) => {
@@ -271,6 +299,14 @@ export default {
             value: this.createCascaderItemValue('Show all'),
             label: 'Show all',
           })
+        }
+
+        if (facet.key.includes('flatmap.connectivity.source')) {
+          this.options[i].children.unshift({
+            value: this.createCascaderItemValue('ConnectivityFilters'),
+            label: 'Filters',
+            disabled: true,
+          });
         }
 
         // populate second level of options
@@ -647,7 +683,79 @@ export default {
     cascadeExpandChange: function (event) {
       //work around as the expand item may change on modifying the cascade props
       this.__expandItem__ = event
+      this.updateListFilters()
+      this.updateListStyleOrder()
       this.cssMods()
+    },
+    updateListStyleOrder: function () {
+      this.$nextTick(() => {
+        const cascaderRef = this.$refs.cascader;
+        const contentRef = cascaderRef?.contentRef;
+
+        if (contentRef) {
+          const menuList = contentRef.querySelectorAll('.el-cascader-menu__list');
+          if (menuList) {
+            menuList.forEach((ul) => {
+              const searchInput = ul.querySelector('.sidebar-cascader-search');
+
+              // order the list using CSS
+              // active items on top - defined in CSS under .cascader-menu-with-search
+              if (searchInput) {
+                ul.classList.add('cascader-menu-with-search');
+              } else {
+                ul.classList.remove('cascader-menu-with-search');
+              }
+            })
+          }
+        }
+      });
+    },
+    searchInputChange: function (event, node) {
+      event.preventDefault();
+      const { target } = event;
+      if (target) {
+        const value = target.value;
+
+        this.searchInputs[node.pathValues[0]] = value;
+        this.updateListFilters();
+      }
+    },
+    searchInputFocusToggle: function (event, option) {
+      const { target } = event;
+      if (!target) return;
+
+      const inputWrapper = target.closest('.el-input__wrapper');
+      if (option === true) {
+        inputWrapper.classList.add('is-focus');
+      } else {
+        inputWrapper.classList.remove('is-focus');
+      }
+    },
+    updateListFilters: function () {
+      const expandItem = this.__expandItem__[0];
+      const searchValue = this.searchInputs[expandItem] || '';
+
+      this.$nextTick(() => {
+        const searchInputEl = this.$refs['searchInput_' + expandItem];
+        if (!searchInputEl) return;
+
+        const ul = searchInputEl.closest('.el-cascader-menu__list');
+        ul.querySelectorAll('.el-cascader-node').forEach((li, index) => {
+          // skip index:0 (search box), and index:1 (Show all)
+          if (index > 1) {
+            const content = li.querySelector('.el-cascader-node__label').textContent;
+            if (content.toLowerCase().includes(searchValue.toLowerCase())) {
+              li.classList.remove('hide');
+            } else {
+              li.classList.add('hide');
+            }
+          }
+        });
+
+        if (searchValue) {
+          searchInputEl.focus();
+        }
+      });
     },
     numberShownChanged: function (event) {
       this.$emit('numberPerPage', parseInt(event))
@@ -836,33 +944,47 @@ export default {
       return false
     },
     getHierarchicalValidatedFilters: function (filters) {
+      const result = []
+      const terms = []
+      const notFound = []
+
       if (filters) {
-        if (this.cascaderIsReady) {
-          const result = []
-          const terms = []
-          filters.forEach((filter) => {
-            const validatedFilter =
-              this.validateAndConvertFilterToHierarchical(filter)
-            if (validatedFilter) {
-              result.push(validatedFilter)
-              terms.push(validatedFilter.term)
-            }
-          })
-          // make sure unused filter terms' show all checkbox is always checked
-          this.options.forEach((option)=>{
-            if (!terms.includes(option.label)) {
-              result.push({
-                facet: "Show all",
-                facetPropPath: option.key,
-                label: "Show all",
-                term: option.label
-              })
-            }
-          })
-          return result
-        } else return filters
+        if (!this.cascaderIsReady) {
+          return {
+            result: filters,
+            notFound: notFound,
+          }
+        }
+
+        filters.forEach((filter) => {
+          const validatedFilter =
+            this.validateAndConvertFilterToHierarchical(filter)
+          if (validatedFilter) {
+            result.push(validatedFilter)
+            terms.push(validatedFilter.term)
+          } else {
+            // not found items
+            notFound.push(filter)
+          }
+        })
+
+        // make sure unused filter terms' show all checkbox is always checked
+        this.options.forEach((option)=>{
+          if (!terms.includes(option.label)) {
+            result.push({
+              facet: "Show all",
+              facetPropPath: option.key,
+              label: "Show all",
+              term: option.label
+            })
+          }
+        })
       }
-      return []
+
+      return {
+        result: result,
+        notFound: notFound,
+      }
     },
     hasLineStyles: function(item) {
       return 'colour' in item && item.colourStyle === 'line'
@@ -886,12 +1008,16 @@ export default {
     },
   },
   mounted: function () {
-    this.algoliaClient = markRaw(new AlgoliaClient(
-      this.envVars.ALGOLIA_ID,
-      this.envVars.ALGOLIA_KEY,
-      this.envVars.PENNSIEVE_API_LOCATION
-    ))
-    this.algoliaClient.initIndex(this.envVars.ALGOLIA_INDEX)
+    // in populateCascader function,
+    // algoliaClient run only when there are no this.entry.options
+    if (!this.entry.options) {
+      this.algoliaClient = markRaw(new AlgoliaClient(
+        this.envVars.ALGOLIA_ID,
+        this.envVars.ALGOLIA_KEY,
+        this.envVars.PENNSIEVE_API_LOCATION
+      ))
+      this.algoliaClient.initIndex(this.envVars.ALGOLIA_INDEX)
+    }
     this.populateCascader().then(() => {
       this.cascaderIsReady = true
       this.checkShowAllBoxes()
@@ -1091,6 +1217,56 @@ export default {
   --el-checkbox-checked-input-border-color: #{$app-primary-color};
   background-color: $app-primary-color;
   border-color: $app-primary-color;
+}
+
+.sidebar-cascader-popper .el-cascader-menu:last-child .el-cascader-node {
+  &.is-disabled {
+    border-bottom: 1px solid #e4e7ed;
+    padding-bottom: 0.5rem;
+    position: sticky;
+    top: 0.5rem;
+    background-color: white;
+    z-index: 20;
+    box-shadow: 0px -6px 0px 6px white;
+    cursor: default;
+
+    .el-checkbox.is-disabled {
+      display: none;
+    }
+
+    .el-cascader-node__label {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    // hide show all for connection filters
+    + .el-cascader-node {
+      display: none;
+    }
+  }
+
+  &.hide {
+    display: none;
+  }
+}
+
+.sidebar-cascader-popper .sidebar-cascader-search.el-input {
+  --el-input-focus-border-color: #{$app-primary-color};
+}
+
+.sidebar-cascader-popper .el-cascader-menu__list.cascader-menu-with-search {
+  display: flex;
+  flex-direction: column;
+
+  .el-cascader-node:nth-child(1),
+  .el-cascader-node:nth-child(2),
+  .el-cascader-node.is-active {
+    order: 1;
+  }
+
+  .el-cascader-node {
+    order: 2;
+  }
 }
 
 .filter-help-popover,

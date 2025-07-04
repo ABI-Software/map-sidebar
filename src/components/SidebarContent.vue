@@ -79,7 +79,9 @@ import {
   ElIcon as Icon,
   ElInput as Input,
   ElPagination as Pagination,
+  ElMessage as Message,
 } from 'element-plus'
+import 'element-plus/es/components/message/style/css';
 import SearchFilters from './SearchFilters.vue'
 import SearchHistory from './SearchHistory.vue'
 import DatasetCard from './DatasetCard.vue'
@@ -192,8 +194,20 @@ export default {
       this.resetPageNavigation()
       //Proceed normally if cascader is ready
       if (this.cascaderIsReady) {
-        this.filter =
-          this.$refs.filtersRef.getHierarchicalValidatedFilters(filter)
+        const validatedFilters = this.$refs.filtersRef.getHierarchicalValidatedFilters(filter);
+        const notFoundItems = validatedFilters.notFound || [];
+        this.filter = validatedFilters.result;
+
+        // Show not found filter items warning message
+        notFoundItems.forEach((notFoundItem) => {
+          Message({
+            message: `${notFoundItem.facet} cannot be found in ${notFoundItem.term}!`,
+            appendTo: this.$el,
+            showClose: true,
+            offset: 113,
+          });
+        });
+
         //Facets provided but cannot find at least one valid
         //facet. Tell the users the search is invalid and reset
         //facets check boxes.
@@ -561,6 +575,20 @@ export default {
   background-color: #f7faff;
   overflow-y: hidden;
   padding: 1rem;
+}
+
+.content-card :deep(.el-message) {
+  position: absolute !important;
+  width: 80%;
+  font-size: 12px;
+  border-radius: var(--el-border-radius-base);
+  --el-message-bg-color: var(--el-color-error-light-9);
+  --el-message-border-color: var(--el-color-error);
+  --el-message-text-color: var(--el-text-color-primary);
+
+  .el-icon.el-message__icon {
+    display: none;
+  }
 }
 
 .content {

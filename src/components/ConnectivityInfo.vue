@@ -277,7 +277,7 @@ export default {
       return this.entry.destinationsWithDatasets;
     },
     resources: function () {
-      return this.entry.hyperlinks;
+      return this.entry.hyperlinks || [];
     },
     sckanVersion: function () {
       return this.entry.knowledgeSource;
@@ -528,17 +528,17 @@ export default {
       }
     },
     getConnectionsFromMap: async function () {
-      if (this.entry.mapuuid) {        
+      if (this.entry.mapuuid) {
         const url =
           this.flatmapApi +
           `flatmap/${this.entry.mapuuid}/connectivity/${this.entry.featureId[0]}`;
-  
+
         try {
           const response = await fetch(url);
           if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
           }
-  
+
           return await response.json();
         } catch (error) {
           throw new Error(error);
