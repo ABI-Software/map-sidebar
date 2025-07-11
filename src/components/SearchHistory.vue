@@ -237,7 +237,7 @@ export default {
 
       if (!isExistingItem) {
         const {label, longLabel} = this.searchHistoryItemLabel(search, filters);
-        if (label || longLabel) {          
+        if (label || longLabel) {
           const newItem = {
             filters: filters,
             search: search,
@@ -247,14 +247,14 @@ export default {
             id: generateUUID(),
             updated: (new Date()).getTime(),
           };
-  
+
           this.searchHistory.push(newItem);
-  
+
           this.searchHistory = this.searchHistory.sort(this.sortSearchHistory);
-  
+
           // trim search history to 12 items
           this.trimSearchHistory();
-  
+
           // Save new data
           localStorage.setItem(this.localStorageKey, JSON.stringify(this.searchHistory));
         }
@@ -355,7 +355,7 @@ export default {
 
       if (filters) {
         filterItems = filters.filter((filterItem) => filterItem.facet !== 'Show all');
-        filterLabels = filterItems.map((item) => item.facet);
+        filterLabels = filterItems.map((item) => item.tagLabel || item.facet);
       }
 
       if (label && filterItems.length) {
@@ -365,7 +365,7 @@ export default {
       }
 
       if (!label && filterItems.length) {
-        label = filterItems[0].facet;
+        label = filterItems[0].tagLabel || filterItems[0].facet;
 
         if (filterItems.length > 1) {
           longLabel += `${filterLabels.join(', ')}`;
