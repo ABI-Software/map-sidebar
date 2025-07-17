@@ -1,7 +1,7 @@
 <template>
   <div class="filters">
     <MapSvgSpriteColor />
-    <div v-if="showFilters">
+    <div v-if="showFilters && options.length > 0">
       <div class="cascader-tag" v-if="presentTags.length > 0">
         <el-tag
           class="ml-2"
@@ -230,10 +230,12 @@ export default {
           // Populate the cascader with new options
           this.populateCascader().then(() => {
             this.cascaderIsReady = true
-            this.checkShowAllBoxes()
-            // this.setCascader(this.entry.filterFacets)
-            this.cssMods()
-            this.$emit('cascaderReady')
+            if (this.options.length) {
+              this.checkShowAllBoxes()
+              // this.setCascader(this.entry.filterFacets)
+              this.cssMods()
+              this.$emit('cascaderReady')
+            }
           })
         }
       },
@@ -377,7 +379,7 @@ export default {
           this.correctnessCheck.term.add(option.label)
           option.children.map((child) => {
             this.correctnessCheck.facet.add(child.label)
-            if (option.label === 'Anatomical structure' && child.label !== 'Show all') {
+            if (['Anatomical structure', 'Nerves'].includes(option.label) && child.label !== 'Show all') {
               child.children.map((child2) => {
                 this.correctnessCheck.facet2.add(child2.label)
               })

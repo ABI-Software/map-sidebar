@@ -110,6 +110,60 @@
       </div>
     </div>
 
+    <div v-if="entry['nerve-label']" class="block">
+      <div class="attribute-title-container">
+        <span class="attribute-title">Nerves</span>
+      </div>
+      <div v-for="(nerve, i) in entry['nerve-label']">
+        <div
+          class="attribute-content"
+          :origin-item-label="nerve.nerve"
+          :key="nerve.nerve"
+          @mouseenter="onConnectivityHovered(nerve.nerve)"
+          @mouseleave="onConnectivityHovered()"
+        >
+          <el-popover
+            width="150"
+            trigger="hover"
+            :teleported="false"
+            popper-class="popover-origin-help"
+          >
+            <template #reference>
+              <el-icon class="magnify-glass" @click="onConnectivityClicked(nerve.nerve)">
+                <el-icon-search />
+              </el-icon>
+            </template>
+            <span>Search nerve</span>
+          </el-popover>
+          <span>{{ capitalise(nerve.nerve) }}</span>
+        </div>
+        <div
+          v-for="(subNerve, i) in nerve.subNerves"
+          class="attribute-content"
+          style="margin-left: 1rem"
+          :origin-item-label="subNerve"
+          :key="subNerve"
+          @mouseenter="onConnectivityHovered(subNerve)"
+          @mouseleave="onConnectivityHovered()"
+        >
+          <el-popover
+            width="150"
+            trigger="hover"
+            :teleported="false"
+            popper-class="popover-origin-help"
+          >
+            <template #reference>
+              <el-icon class="magnify-glass" @click="onConnectivityClicked(subNerve)">
+                <el-icon-search />
+              </el-icon>
+            </template>
+            <span>Search sub nerve</span>
+          </el-popover>
+          <span>{{ capitalise(subNerve) }}</span>
+        </div>
+      </div>
+    </div>
+
     <div class="content-container content-container-connectivity" v-show="activeView === 'listView'">
       <connectivity-list
         v-loading="connectivityLoading"
@@ -407,6 +461,15 @@ export default {
         return contentString;
       }
 
+      // Nerves
+      if (this.entry['nerve-label']?.length) {
+        const title = 'Nerves';
+        const nerves = this.entry['nerve-label'];
+        const nerveLabels = nerves.map(nerve => Object.values(nerve)).flat(Infinity);
+        const transformedNerves = transformData(title, nerveLabels);
+        contentArray.push(transformedNerves);
+      }
+      
       // Origins
       if (this.origins?.length) {
         const title = 'Origin';
@@ -471,6 +534,7 @@ export default {
     onConnectivityHovered: function (label) {
       const payload = {
         connectivityInfo: this.entry,
+        label: label,
         data: label ? this.getConnectivityDatasets(label) : [],
       };
       // type: to show error only for click event
@@ -913,6 +977,48 @@ export default {
 
   &:not([style*="display: none"]) ~ .content-container-references {
     margin-top: -1.25rem;
+  }
+}
+
+.attribute-content {
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.25s ease;
+  position: relative;
+  cursor: default;
+  padding-left: 16px;
+
+  .magnify-glass {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  &:hover {
+    color: $app-primary-color;
+
+    .magnify-glass {
+      display: block;
+      padding-top: 4px;
+      cursor: pointer;
+    }
+  }
+
+  + .attribute-content {
+    &::before {
+      content: "";
+      width: 90%;
+      height: 1px;
+      background-color: var(--el-border-color);
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  }
+
+  &:last-of-type {
+    margin-bottom: 0.5em;
   }
 }
 </style>
