@@ -22,7 +22,7 @@
         <el-button
           link
           class="el-button-link"
-          @click="openSearch([], '')"
+          @click="onResetClick"
           size="large"
         >
           Reset
@@ -133,7 +133,9 @@ import {
   ElIcon as Icon,
   ElInput as Input,
   ElPagination as Pagination,
+  ElMessage as Message,
 } from "element-plus";
+import 'element-plus/es/components/message/style/css';
 import EventBus from './EventBus.js'
 import SearchFilters from "./SearchFilters.vue";
 import SearchHistory from "./SearchHistory.vue";
@@ -342,13 +344,13 @@ export default {
       // disable hover changes when show connectivity is clicked
       if (!this.freezed) {
         let payload = { tabType: "connectivity" };
-  
+
         if (data) {
           payload = {...payload, ...data};
         } else if (this.expandedData) {
           payload = {...payload, ...this.expandedData};
         }
-  
+
         this.$emit("hover-changed", payload);
       }
     },
@@ -363,13 +365,46 @@ export default {
         this.openSearch([], '');
       }
     },
+    onResetClick: function () {
+      this.openSearch([], '');
+      this.$emit('connectivity-explorer-reset', []);
+    },
     openSearch: function (filter, search = "") {
       this.searchInput = search;
       this.resetPageNavigation();
       //Proceed normally if cascader is ready
       if (this.cascaderIsReady) {
-        this.filter =
-          this.$refs.filtersRef.getHierarchicalValidatedFilters(filter);
+        const validatedFilters = this.$refs.filtersRef.getHierarchicalValidatedFilters(filter);
+        const notFoundItems = validatedFilters.notFound || [];
+        this.filter = validatedFilters.result;
+
+        // Show not found filter items warning message
+        notFoundItems.forEach((notFoundItem) => {
+          const itemLabel = notFoundItem.tagLabel || notFoundItem.facet;
+          const itemLabelLowerCase = itemLabel.charAt(0).toLowerCase() + itemLabel.slice(1);
+          let message = '';
+          if (notFoundItem.term.toLowerCase() === 'origin') {
+            message = `There are no neuron populations beginning at <strong>${itemLabelLowerCase}</strong>.`;
+          } else if (notFoundItem.term.toLowerCase() === 'via') {
+            message = `There are no neuron populations that run through <strong>${itemLabelLowerCase}</strong>.`;
+          } else if (notFoundItem.term.toLowerCase() === 'destination') {
+            message = `There are no neuron populations terminating at <strong>${itemLabelLowerCase}</strong>.`;
+          } else {
+            message = `There are no neuron populations beginning, terminating, or running through <strong>${itemLabelLowerCase}</strong>.`
+          }
+          Message({
+            dangerouslyUseHTMLString: true,
+            message: message,
+            appendTo: this.$el,
+            showClose: true,
+            offset: 113,
+          });
+        });
+
+        if (notFoundItems.length) {
+          this.$emit('connectivity-explorer-reset', notFoundItems);
+        }
+
         //Facets provided but cannot find at least one valid
         //facet. Tell the users the search is invalid and reset
         //facets check boxes.
@@ -567,6 +602,7 @@ export default {
   width: 298px !important;
   height: 40px;
   padding-right: 14px;
+  font-family: inherit;
 
   :deep(.el-input__inner) {
     font-family: inherit;
@@ -605,6 +641,24 @@ export default {
   background-color: #f7faff;
   overflow-y: hidden;
   padding: 1rem;
+}
+
+.content-card :deep(.el-message) {
+  position: absolute !important;
+  width: 80%;
+  font-size: 12px;
+  border-radius: var(--el-border-radius-base);
+  --el-message-bg-color: var(--el-color-error-light-9);
+  --el-message-border-color: var(--el-color-error);
+  --el-message-text-color: var(--el-text-color-primary);
+
+  .el-icon.el-message__icon {
+    display: none;
+  }
+
+  .el-message__closeBtn {
+    margin-left: auto;
+  }
 }
 
 .content {
