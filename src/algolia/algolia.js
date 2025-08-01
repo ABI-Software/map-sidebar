@@ -1,6 +1,24 @@
 /* eslint-disable no-alert, no-console */
 import algoliasearch from 'algoliasearch'
 
+const getFacetsChildrenMap = (childFacets, numberOfLayers) => {
+  const mapping = {}
+  childFacets.forEach((facet) => {
+    const info = facet.split('.');
+    if (info.length !== numberOfLayers) {
+      return;
+    }
+    const pathName = facet.substring(0, facet.lastIndexOf('.'));
+    const name = info[info.length - 1];
+    if (Object.keys(mapping).includes(pathName)) {
+      mapping[pathName].push(name);
+    } else {
+      mapping[pathName] = [name];
+    }
+  });
+  return mapping;
+}
+
 // export `createAlgoliaClient` to use it in page components
 export class AlgoliaClient {
   constructor(algoliaId, algoliaKey, PENNSIEVE_API_LOCATION = 'https://api.pennsieve.io') {
@@ -18,14 +36,18 @@ export class AlgoliaClient {
   getAlgoliaFacets(propPathMapping) {
     const facetPropPaths = propPathMapping.map(facet => facet.facetPropPath)
     const facetSubpropPaths = propPathMapping.map(item => item.facetSubpropPath)
-    let facetData = []
-    let facetId = 0
+    const facetSubsubpropPaths = propPathMapping.map(
+      item => item.facetSubsubpropPath).filter(
+        i => i !== undefined
+      )
     return this.index
       .search('', {
         sortFacetValuesBy: 'alpha',
-        facets: facetPropPaths.concat(facetSubpropPaths),
+        facets: facetPropPaths.concat(facetSubpropPaths).concat(facetSubsubpropPaths),
       })
       .then(response => {
+        let facetData = []
+        let facetId = 0
         facetPropPaths.map((facetPropPath) => {
           const parentFacet = propPathMapping.find(item => item.facetPropPath == facetPropPath)
           var children = []
@@ -35,29 +57,57 @@ export class AlgoliaClient {
             responseFacets[facetPropPath] == undefined // if no facets, return empty object
               ? {}
               : responseFacets[facetPropPath]
-          const allPossibleChildrenSubfacets = parentFacet && responseFacets[parentFacet.facetSubpropPath] ? Object.keys(responseFacets[parentFacet.facetSubpropPath]) : []
+          const allSubfacets = parentFacet && responseFacets[parentFacet.facetSubpropPath] ? Object.keys(responseFacets[parentFacet.facetSubpropPath]) : []
+          const allSubsubfacets = (parentFacet && parentFacet.facetSubsubpropPath &&
+            responseFacets[parentFacet.facetSubsubpropPath]) ? 
+            Object.keys(responseFacets[parentFacet.facetSubsubpropPath]) : []
+          const subFacetsMap = getFacetsChildrenMap(allSubfacets, 2);
+          const subSubFacetsMap = getFacetsChildrenMap(allSubsubfacets, 3);
           // Loop through all subfacets and find the ones that are children of the current facet
           Object.keys(responseFacetChildren).map(facet => {
-            const childrenSubfacets = allPossibleChildrenSubfacets.reduce((filtered, childFacetInfo) => {
-              const info = childFacetInfo.split('.');
-              if (info.length !== 2) {
-                return filtered;
-              }
-              if (facet === info[0]) {
-                filtered.push({
-                  label: info[1], 
-                  id: facetId++,
-                  facetPropPath: `${parentFacet ? parentFacet.facetSubpropPath : undefined}`
-                });
-              }
-              return filtered;
-            }, []); // Provide an empty array as the initial value
+            const childrenSubfacets = [];
+            if (Object.keys(subFacetsMap).includes(facet)) {
+              subFacetsMap[facet].forEach((label) => {
+                const fullPath = `${facet}.${label}`
+                const childrenSubsubfacets = []
+                if (Object.keys(subSubFacetsMap).includes(fullPath)) {
+                  subSubFacetsMap[fullPath].forEach((childLabel) => {
+                    childrenSubsubfacets.push(
+                      {
+                        label: childLabel,
+                        id: facetId++,
+                        facetPropPath: `${parentFacet ? parentFacet.facetSubsubpropPath : undefined}`
+                      }
+                    )
+                  });
+                  //REMOVE ME LATER: This is a hack to add an extra item for subsubcategory
+                  if (fullPath === "nerves and ganglia.dorsal root ganglion") {
+                    childrenSubsubfacets.push(
+                      {
+                        label: "Non specific",
+                        id: facetId++,
+                        facetPropPath: `${parentFacet ? parentFacet.facetSubsubpropPath : undefined}`
+                      }
+                    )
+                  }
+                }
+                childrenSubfacets.push(
+                  {
+                    label,
+                    id: facetId++,
+                    facetPropPath: `${parentFacet ? parentFacet.facetSubpropPath : undefined}`,
+                    children: childrenSubsubfacets.length ? childrenSubsubfacets : undefined,
+                  }
+                );
+              })
+            }
             let newChild = {
               label: facet,
               id: facetId++,
               facetPropPath: facetPropPath
             }
             if (childrenSubfacets.length > 0) {
+              
               newChild.children = childrenSubfacets
             }
             children.push(newChild)
@@ -200,13 +250,13 @@ export class AlgoliaClient {
             'objectID',
             'item.keywords.keyword',
             'anatomy.organ.name',
-            'anatomy.organ.curie'
+            'anatomy.organ.curie',
+            'anatomy.organ.subsubcategory.name'
           ],
         })
         .then(response => {
           // Saving the line below incase we want to starty using keywords again
           // let anatomyAsUberons = this._processAnatomy(response.hits)
-
           resolve({
             forFlatmap: this.processResultsForFlatmap(response.hits),
             forScaffold: this.processResultsForScaffold(response.hits)
@@ -215,11 +265,15 @@ export class AlgoliaClient {
     })
   }
   processResultsForFlatmap(hits) {
-    let curieForDatsets = hits.map(h=>({
-      id: h.objectID,
-      terms: h.anatomy? h.anatomy.organ.map(o=>o.curie) : []
-    }))
-    return curieForDatsets 
+    let curieForDatasets = hits.map(h=>{
+      const data = {
+        id: h.objectID,
+        terms: h.anatomy? h.anatomy.organ.map(o=>o.curie) : []
+      }
+      return data
+    })
+
+    return curieForDatasets 
   }
   processResultsForScaffold(hits) {
     let numberOfDatasetsForAnatomy = {}
