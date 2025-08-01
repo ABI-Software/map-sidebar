@@ -195,6 +195,9 @@ export default {
           search: '',
           filters: [],
         },
+        connectivityEntries: [],
+        annotationEntries: [],
+        activeTabId: this.activeTabId,
       },
     }
   },
@@ -410,21 +413,55 @@ export default {
     updateState: function () {
       const datasetExplorerTabRef = this.getTabRef(undefined, 'datasetExplorer');
       const connectivityExplorerTabRef = this.getTabRef(undefined, 'connectivityExplorer');
+      this.state.activeTabId = this.activeTabId;
       this.state.dataset.search = datasetExplorerTabRef.getSearch();
       this.state.dataset.filters = datasetExplorerTabRef.getFilters();
       this.state.connectivity.search = connectivityExplorerTabRef.getSearch();
       this.state.connectivity.filters = connectivityExplorerTabRef.getFilters();
+      this.state.connectivityEntries = this.connectivityEntry.map((entry) => entry.id);
+      this.state.annotationEntries = this.annotationEntry.map((entry) => entry.models);
     },
+    /**
+     * This function returns the current state of the sidebar
+     * to store in the map state.
+     * @returns {Object} state
+     * @public
+     */
     getState: function () {
       this.updateState();
       return this.state;
     },
+    /**
+     * This function restores the state of the sidebar
+     * from the provided state object.
+     * @param state {Object} state
+     * @public
+     */
     setState: function (state) {
       // if state is not provided or formatted incorrectly, do nothing
       if (!state || !state.dataset || !state.connectivity) return;
-      this.state = state;
-      this.openSearch(state.dataset.filters, state.dataset.search);
-      this.openConnectivitySearch(state.connectivity.filters, state.connectivity.search);
+      this.state = JSON.parse(JSON.stringify(state)); // deep copy to avoid reference issues
+      const datasetFilters = state.dataset.filters;
+      const connectivityFilters = state.connectivity.filters;
+      const datasetSearch = state.dataset.search;
+      const connectivitySearch = state.connectivity.search;
+
+      if (datasetFilters.length || datasetSearch) {
+        this.openSearch(datasetFilters, datasetSearch);
+      }
+
+      if (connectivityFilters.length || connectivitySearch) {
+        this.openConnectivitySearch(connectivityFilters, connectivitySearch);
+      }
+
+      if (state.activeTabId) {
+        this.$nextTick(() => {
+          const hasTab = this.tabEntries.find((t) => t.id === state.activeTabId);
+          if (hasTab) {
+            this.activeTabId = state.activeTabId;
+          }
+        });
+      }
     },
   },
   computed: {

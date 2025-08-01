@@ -481,7 +481,8 @@ export default {
       return this.searchInput
     },
     getFilters: function () {
-      return this.filter;
+      const hasFilters = this.filter.some((f) => f.facet.toLowerCase() !== 'show all');
+      return hasFilters ? this.filter : [];
     },
   },
   mounted: function () {
