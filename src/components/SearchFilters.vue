@@ -290,7 +290,7 @@ export default {
     createChildrenCascaderValue: function(children, facet, facets) {
       if (children?.length) {
         children.forEach((facetItem, i) => {
-          //copy the facets into 
+          //copy the facets into
           if (children[i].facetPropPath !== 'pennsieve.organization.name') {
             children[i].label = convertReadableLabel(
               facetItem.label
@@ -488,12 +488,12 @@ export default {
         // term and facets will be the keys
         // values will be either empty object or another object with next level's facet as key
         if (term && this.correctnessCheck.term.has(term)) {
-          if (!(term in this.cascaderTags)) {            
+          if (!(term in this.cascaderTags)) {
             this.cascaderTags[term] = {}
             this.cascaderTagsClone[term] = {}
           }
           if (facetLabel && this.correctnessCheck.facet.has(facetLabel)) {
-            if (!(facetLabel in this.cascaderTags[term])) {            
+            if (!(facetLabel in this.cascaderTags[term])) {
               this.cascaderTags[term][facetLabel] = {}
               if (termId) {
                 this.cascaderTagsClone[term][termId + ':' + facetLabel] = {}
@@ -502,12 +502,12 @@ export default {
               }
             }
             if (facet2 && this.correctnessCheck.facet2.has(facet2)) {
-              if (!(facet2 in this.cascaderTags[term][facetLabel])) {            
+              if (!(facet2 in this.cascaderTags[term][facetLabel])) {
                 this.cascaderTags[term][facetLabel][facet2] = {}
                 this.cascaderTagsClone[term][facetLabel][facet2] = {}
               }
               if (facet3 && this.correctnessCheck.facet3.has(facet3)) {
-                if (!(facet3 in this.cascaderTags[term][facetLabel][facet2])) {            
+                if (!(facet3 in this.cascaderTags[term][facetLabel][facet2])) {
                   this.cascaderTags[term][facetLabel][facet2][facet3] = {}
                   this.cascaderTagsClone[term][facetLabel][facet2][facet3] = {}
                 }

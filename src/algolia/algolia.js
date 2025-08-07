@@ -59,7 +59,7 @@ export class AlgoliaClient {
               : responseFacets[facetPropPath]
           const allSubfacets = parentFacet && responseFacets[parentFacet.facetSubpropPath] ? Object.keys(responseFacets[parentFacet.facetSubpropPath]) : []
           const allSubsubfacets = (parentFacet && parentFacet.facetSubsubpropPath &&
-            responseFacets[parentFacet.facetSubsubpropPath]) ? 
+            responseFacets[parentFacet.facetSubsubpropPath]) ?
             Object.keys(responseFacets[parentFacet.facetSubsubpropPath]) : []
           const subFacetsMap = getFacetsChildrenMap(allSubfacets, 2);
           const subSubFacetsMap = getFacetsChildrenMap(allSubsubfacets, 3);
@@ -107,7 +107,7 @@ export class AlgoliaClient {
               facetPropPath: facetPropPath
             }
             if (childrenSubfacets.length > 0) {
-              
+
               newChild.children = childrenSubfacets
             }
             children.push(newChild)
@@ -258,22 +258,58 @@ export class AlgoliaClient {
           // Saving the line below incase we want to starty using keywords again
           // let anatomyAsUberons = this._processAnatomy(response.hits)
           resolve({
-            forFlatmap: this.processResultsForFlatmap(response.hits),
+            forFlatmap: this.processResultsForFlatmap(response.facets ,response.hits),
             forScaffold: this.processResultsForScaffold(response.hits)
           })
         })
     })
   }
-  processResultsForFlatmap(hits) {
+  processResultsForFlatmap(facets, hits) {
+    const filteredOrganNames = this.filterAvailableAnatomies(facets);
+
     let curieForDatasets = hits.map(h=>{
       const data = {
         id: h.objectID,
-        terms: h.anatomy? h.anatomy.organ.map(o=>o.curie) : []
+        terms: h.anatomy
+          ? h.anatomy.organ.map(o => {
+              if (filteredOrganNames.includes(o.name.toLowerCase())) {
+                return o.curie
+              }
+            }).filter(Boolean)
+          : []
       }
       return data
     })
 
-    return curieForDatasets 
+    return curieForDatasets
+  }
+  filterAvailableAnatomies(facets) {
+    const anatomyOrganName = facets['anatomy.organ.name']
+    const anatomyOrganCategoryName = facets['anatomy.organ.category.name']
+    const anatomyOrganSubcategoryName = facets['anatomy.organ.subcategory.name']
+    const anatomyOrganNames = anatomyOrganName ? Object.keys(anatomyOrganName) : []
+    const anatomyOrganCategoryNames = anatomyOrganCategoryName ? Object.keys(anatomyOrganCategoryName) : []
+    const anatomyOrganSubcategoryNames = anatomyOrganSubcategoryName ? Object.keys(anatomyOrganSubcategoryName) : []
+    const filteredOrganNames = [];
+    anatomyOrganCategoryNames.forEach((_categoryName) => {
+      const categoryName = _categoryName.toLowerCase();
+      anatomyOrganNames.forEach((_organName) => {
+        const organName = _organName.toLowerCase();
+        const fullName = `${categoryName}.${organName}`
+
+        const found = anatomyOrganSubcategoryNames.some((_subcategoryName) => {
+          const subcategoryName = _subcategoryName.toLowerCase();
+          if (subcategoryName === fullName) {
+            return true
+          }
+        });
+
+        if (found) {
+          filteredOrganNames.push(organName);
+        }
+      })
+    })
+    return filteredOrganNames;
   }
   processResultsForScaffold(hits) {
     let numberOfDatasetsForAnatomy = {}
