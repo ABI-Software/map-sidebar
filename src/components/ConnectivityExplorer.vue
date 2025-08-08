@@ -374,7 +374,9 @@ export default {
       //Proceed normally if cascader is ready
       if (this.cascaderIsReady) {
         const validatedFilters = this.$refs.filtersRef.getHierarchicalValidatedFilters(filter);
-        const notFoundItems = validatedFilters.notFound || [];
+        const notFoundItems = validatedFilters.notFound
+          ? validatedFilters.notFound.filter(item => item.facet.toLowerCase() !== 'show all')
+          : [];
         this.filter = validatedFilters.result;
 
         // Show not found filter items warning message
