@@ -85,7 +85,7 @@ export default {
       deep: true,
       immediate: true,
       handler: function () {
-        this.addToCategories(this.entry.flatmap, 'flatmap')
+        this.addToCategories(this.entry.flatmaps, 'Flatmaps')
         this.addToCategories(this.entry.plots, 'Plots')
         this.addToCategories(this.entry.scaffolds, 'Scaffolds')
         this.addToCategories(this.entry.segmentation, 'Segmentations')

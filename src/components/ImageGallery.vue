@@ -149,8 +149,8 @@ export default {
       }
     },
     createFlatmapItems: function () {
-      if (this.entry.flatmap) {
-        this.entry.flatmap.forEach((flatmap) => {
+      if (this.entry.flatmaps) {
+        this.entry.flatmaps.forEach((flatmap) => {
           const id = flatmap.identifier
           const thumbnail = this.getThumbnailForPlot(
             flatmap,

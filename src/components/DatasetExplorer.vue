@@ -442,7 +442,7 @@ export default {
           segmentation: element['mbf-segmentation'],
           //omex format will be the preferred mimetype
           simulation: element['abi-simulation-omex-file'] ? element['abi-simulation-omex-file'] : element['abi-simulation-file'],
-          flatmap: element['abi-flatmap-file'],
+          flatmaps: element['abi-flatmap-file'],
           additionalLinks: element.additionalLinks,
           detailsReady: true,
         })
