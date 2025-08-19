@@ -123,6 +123,7 @@ export default {
     createSciCurnchItems: function () {
       this.updateS3Bucket(this.entry.s3uri)
       this.createDatasetItem()
+      this.createFlatmapItems()
       this.createScaffoldItems()
       this.createSimulationItems()
       this.createPlotItems()
@@ -144,6 +145,45 @@ export default {
           link,
           hideType: true,
           hideTitle: true,
+        })
+      }
+    },
+    createFlatmapItems: function () {
+      if (this.entry.flatmaps) {
+        this.entry.flatmaps.forEach((flatmap) => {
+          const id = flatmap.identifier
+          const thumbnail = this.getThumbnailForPlot(
+            flatmap,
+            this.entry.thumbnails
+          )
+          let thumbnailURL = undefined
+          let mimetype = ''
+          if (thumbnail) {
+            thumbnailURL = this.getImageURL(this.envVars.API_LOCATION, {
+              id,
+              prefix: this.getS3Prefix(),
+              file_path: thumbnail.dataset.path,
+              s3Bucket: this.s3Bucket,
+            })
+            mimetype = thumbnail.mimetype.name
+          }
+          let action = {
+            label: capitalise(this.label),
+            resource: flatmap.flatmap_uuid,
+            title: 'View Flatmap',
+            type: 'Flatmap',
+            discoverId: this.discoverId,
+            version: this.datasetVersion,
+          }
+          this.items['Flatmaps'].push({
+            id,
+            title: baseName(filePath),
+            type: 'Flatmap',
+            thumbnail: thumbnailURL,
+            userData: action,
+            hideType: true,
+            mimetype,
+          })
         })
       }
     },
@@ -348,6 +388,8 @@ export default {
           } else {
             const filePath = simulation.dataset.path
             const id = simulation.identifier
+            //Despite of the name, this method can be used to retreive
+            //the thumbnail information for any none scaffold type thumbnail
             const thumbnail = this.getThumbnailForPlot(
               simulation,
               this.entry.thumbnails

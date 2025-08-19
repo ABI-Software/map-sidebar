@@ -440,7 +440,9 @@ export default {
               ? element['abi-contextual-information']
               : undefined,
           segmentation: element['mbf-segmentation'],
+          //omex format will be the preferred mimetype
           simulation: element['abi-simulation-omex-file'] ? element['abi-simulation-omex-file'] : element['abi-simulation-file'],
+          flatmaps: element['abi-flatmap-file'],
           additionalLinks: element.additionalLinks,
           detailsReady: true,
         })
