@@ -371,6 +371,12 @@ export default {
         tabType: 'dataset',
         type: 'reset-update',
       })
+
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_action_filter`,
+        'category': `reset`,
+        'location': 'map_sidebar_connectivity',
+      });
     },
     openSearch: function (filter, search = "") {
       this.searchInput = search;
@@ -509,15 +515,31 @@ export default {
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val;
-      this.pageChange(1);
+
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_connectivity_perPage`,
+        'category': val,
+        'location': 'map_sidebar_connectivity',
+      });
+
+      const preventPaginationTracking = this.page === 1;
+      this.pageChange(1, preventPaginationTracking);
     },
-    pageChange: function (page) {
+    pageChange: function (page, preventPaginationTracking = false) {
       this.start = (page - 1) * this.numberPerPage;
       this.page = page;
       this.expanded = "";
       this.expandedData = null;
       this.scrollToTop();
       // this.searchKnowledge(this.filter, this.searchInput);
+
+      if (!preventPaginationTracking) {
+        EventBus.emit('trackEvent', {
+          'event_name': `portal_maps_connectivity_pagination`,
+          'category': `page_${this.page}`,
+          'location': 'map_sidebar_connectivity',
+        });
+      }
     },
     scrollToTop: function () {
       if (this.$refs.content) {

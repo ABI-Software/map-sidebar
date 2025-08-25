@@ -266,6 +266,12 @@ export default {
         tabType: 'dataset',
         type: 'reset-update',
       })
+
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_action_filter`,
+        'category': `reset`,
+        'location': 'map_sidebar_dataset',
+      });
     },
     searchEvent: function (event = false) {
       if (event.keyCode === 13 || event instanceof MouseEvent) {
@@ -330,9 +336,17 @@ export default {
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val
-      this.pageChange(1)
+
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_dataset_perPage`,
+        'category': val + '',
+        'location': 'map_sidebar_dataset',
+      });
+
+      const preventPaginationTracking = this.page === 1;
+      this.pageChange(1, preventPaginationTracking)
     },
-    pageChange: function (page) {
+    pageChange: function (page, preventPaginationTracking = false) {
       this.start = (page - 1) * this.numberPerPage
       this.page = page
       this.searchAlgolia(
@@ -341,6 +355,14 @@ export default {
         this.numberPerPage,
         this.page
       )
+
+      if (!preventPaginationTracking) {
+        EventBus.emit('trackEvent', {
+          'event_name': `portal_maps_dataset_pagination`,
+          'category': `page_${this.page}`,
+          'location': 'map_sidebar_dataset',
+        });
+      }
     },
     handleMissingData: function (doi) {
       let i = this.results.findIndex((res) => res.doi === doi)

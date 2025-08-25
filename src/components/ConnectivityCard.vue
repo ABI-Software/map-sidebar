@@ -26,6 +26,8 @@
 </template>
 
 <script>
+import EventBus from './EventBus';
+
 export default {
   name: "ConnectivityCard",
   data() {
@@ -71,6 +73,12 @@ export default {
     cardClicked: function (data) {
       if (!this.loading) {
         this.$emit("open-connectivity", data);
+
+        EventBus.emit('trackEvent', {
+          'event_name': `portal_maps_connectivity_open`,
+          'category': data.id || '',
+          'location': 'map_sidebar_connectivity',
+        });
       }
     },
   },

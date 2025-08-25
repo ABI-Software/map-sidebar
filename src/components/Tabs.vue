@@ -59,6 +59,14 @@ export default {
   methods: {
     tabClicked: function (tab) {
       this.$emit("tabClicked", { id: tab.id, type: tab.type });
+
+      // To track only direct tab click events
+      this.$emit('trackEvent', {
+        'event': 'interaction_event',
+        'event_name': 'portal_maps_sidebar_open_tab',
+        'category': tab.type,
+        'location': 'map_sidebar_tabs',
+      });
     },
     tabClosed: function (tab) {
       this.$emit("tabClosed", { id: tab.id, type: tab.type });

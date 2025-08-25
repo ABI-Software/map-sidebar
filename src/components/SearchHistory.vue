@@ -344,8 +344,22 @@ export default {
       // Save updated data
       localStorage.setItem(this.localStorageKey, JSON.stringify(this.searchHistory))
     },
+    getParentComponentName: function () {
+      const isConnectivity = this.localStorageKey?.indexOf('connectivity') !== -1;
+      const isDataset = this.localStorageKey?.indexOf('dataset') !== -1;
+      const location = isConnectivity ? 'connectivity' : isDataset ? 'dataset' : '';
+      return location;
+    },
     search: function (item) {
       this.$emit('search', item)
+
+      // Event tracking
+      const location = this.getParentComponentName();
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_search_history_click`,
+        'category': item.longLabel || item.label,
+        'location': `map_sidebar_${location}`,
+      });
     },
     searchHistoryItemLabel: function (search, filters) {
       let label = search ? `"${search.trim()}"` : '';
@@ -389,12 +403,27 @@ export default {
       });
       this.savedSearchHistory = this.searchHistory.filter((item) => item.saved);
       this.updateSearchHistory();
+
+      const eventName = item.saved ? 'portal_maps_search_history_saved' : 'portal_maps_search_history_unsaved';
+      const location = this.getParentComponentName();
+      EventBus.emit('trackEvent', {
+        'event_name': eventName,
+        'category': item.longLabel || item.label,
+        'location': `map_sidebar_${location}`,
+      });
     },
     removeFromSavedSearch: function (item) {
       const itemIndex = this.searchHistory.findIndex((_item) => _item.id === item.id);
       this.searchHistory.splice(itemIndex, 1);
       this.savedSearchHistory = this.searchHistory.filter((item) => item.saved);
       this.updateSearchHistory();
+
+      const location = this.getParentComponentName();
+      EventBus.emit('trackEvent', {
+        'event_name': 'portal_maps_search_history_removed',
+        'category': item.longLabel || item.label,
+        'location': `map_sidebar_${location}`,
+      });
     },
   },
 }

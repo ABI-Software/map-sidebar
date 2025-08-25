@@ -49,7 +49,7 @@
             Show connectivity on map
           </span>
         </el-popover>
-        <CopyToClipboard :content="updatedCopyContent" />
+        <CopyToClipboard @copied="onCopied" :content="updatedCopyContent" />
         <template v-if="withCloseButton">
           <el-popover
             width="auto"
@@ -188,6 +188,7 @@
         :resources="resources"
         @references-loaded="onReferencesLoaded"
         @show-reference-connectivities="onShowReferenceConnectivities"
+        @trackEvent="onTrackEvent"
       />
     </div>
   </div>
@@ -363,6 +364,19 @@ export default {
       const featureIds = this.entry.featureId || [];
       // connected to flatmapvuer > moveMap(featureIds) function
       this.$emit('show-connectivity', featureIds);
+
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_show_connectivity_on_map`,
+        'category': this.entry.id || '',
+        'location': 'map_sidebar_connectivity',
+      });
+    },
+    onCopied: function () {
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_connectivity_copy`,
+        'category': this.entry.id || '',
+        'location': 'map_sidebar_connectivity',
+      });
     },
     switchConnectivityView: function (val) {
       this.activeView = val;
@@ -374,6 +388,12 @@ export default {
           this.graphViewLoaded = true;
         });
       }
+
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_connectivity_switch_view`,
+        'category': val,
+        'location': 'map_sidebar_connectivity',
+      });
     },
     onTapNode: function (data) {
       // save selected state for list view
@@ -456,7 +476,7 @@ export default {
         const transformedNerves = transformData(title, nerveLabels);
         contentArray.push(transformedNerves);
       }
-      
+
       // Origins
       if (this.origins?.length) {
         const title = 'Origin';
@@ -562,6 +582,12 @@ export default {
         entry: this.entry,
         connectivitySource: connectivitySource,
       });
+
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_connectivity_source_change`,
+        'category': connectivitySource,
+        'location': 'map_sidebar_connectivity',
+      });
     },
     updateGraphConnectivity: function () {
       if (this.connectivitySource === "map") {
@@ -605,6 +631,15 @@ export default {
     },
     closeConnectivity: function () {
       this.$emit('close-connectivity');
+
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_connectivity_close`,
+        'category': this.entry.id || '',
+        'location': 'map_sidebar_connectivity',
+      });
+    },
+    onTrackEvent: function (data) {
+      EventBus.emit('trackEvent', data);
     },
   },
   mounted: function () {

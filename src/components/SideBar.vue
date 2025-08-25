@@ -27,6 +27,7 @@
             :activeId="activeTabId"
             @tabClicked="tabClicked"
             @tabClosed="tabClosed"
+            @trackEvent="trackEvent"
           />
           <template v-for="tab in tabs" key="tab.id">
             <template v-if="tab.type === 'annotation'">
@@ -40,6 +41,7 @@
                 @cancel-create="$emit('cancel-create')"
                 @confirm-delete="$emit('confirm-delete', $event)"
                 @hover-changed="hoverChanged(tab.id, $event)"
+                @trackEvent="trackEvent"
               />
             </template>
             <template v-else-if="tab.type === 'connectivityExplorer'">
@@ -464,6 +466,19 @@ export default {
         });
       }
     },
+    /**
+     * @public
+     * Track an event for analytics
+     * @param {Object} `data` - The event data
+     */
+    trackEvent: function (data) {
+      const taggingData = {
+        'event': 'interaction_event',
+        'location': 'map_sidebar',
+        ...data,
+      };
+      this.$emit('trackEvent', taggingData);
+    }
   },
   computed: {
     // This should respect the information provided by the property
@@ -536,6 +551,11 @@ export default {
         this.availableAnatomyFacets = payLoad.find((facet) => facet.label === 'Anatomical Structure').children
         this.storeAvailableAnatomyFacets(this.availableAnatomyFacets);
     })
+
+    // Event tracking
+    EventBus.on('trackEvent', (data) => {
+      this.trackEvent(data);
+    });
   },
 }
 </script>
