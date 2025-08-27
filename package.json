@@ -38,7 +38,7 @@
     "./src/*": "./src/*"
   },
   "dependencies": {
-    "@abi-software/gallery": "^1.1.2",
+    "@abi-software/gallery": "^1.2.0",
     "@abi-software/map-utilities": "^1.7.0",
     "@abi-software/svg-sprite": "^1.0.1",
     "@element-plus/icons-vue": "^2.3.1",
