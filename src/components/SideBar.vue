@@ -64,6 +64,14 @@
                 @connectivity-item-close="onConnectivityItemClose"
               />
             </template>
+            <template v-else-if="tab.type === 'acupoints' && acupointsInfoList">
+              <acupoints-info-search
+                :ref="'acupointsTab_' + tab.id"
+                :entry="acupointsInfoList"
+                @on-acupoints-click="acupointClicked"
+                v-show="tab.id === activeTabId"
+              />
+            </template>
             <template v-else>
               <DatasetExplorer
                 class="sidebar-content-container"
@@ -92,6 +100,7 @@ import { ElDrawer as Drawer, ElIcon as Icon } from 'element-plus'
 import DatasetExplorer from './DatasetExplorer.vue'
 import EventBus from './EventBus.js'
 import Tabs from './Tabs.vue'
+import AcupointsInfoSearch from './AcupointsInfoSearch.vue'
 import AnnotationTool from './AnnotationTool.vue'
 import ConnectivityExplorer from './ConnectivityExplorer.vue'
 import { removeShowAllFacets } from '../algolia/utils.js'
@@ -152,6 +161,13 @@ export default {
       default: [],
     },
     /**
+     * The acupoints info to show in sidebar.
+     */
+    acupointsInfoList: {
+      type: Object,
+      default: null,
+    },
+    /**
      * The annotation data to show in sidebar.
      */
     annotationEntry: {
@@ -204,6 +220,13 @@ export default {
     }
   },
   methods: {
+  /**
+     * This event is emitted with a mouse click on acupoint card
+     * @arg data
+     */
+    acupointClicked: function (data) {
+      this.$emit('acupoints-clicked', data)
+    },
     onConnectivityCollapseChange: function (data) {
       this.$emit('connectivity-collapse-change', data)
     },
@@ -295,9 +318,6 @@ export default {
         datasetExplorerTabRef.openSearch(facets, query);
       })
     },
-    /**
-     * Get the ref id of the tab by id and type.
-     */
     getTabRef: function (id, type, switchTab = false) {
       const matchedTab = this.tabEntries.filter((tabEntry) => {
         return (id === undefined || tabEntry.id === id) &&
@@ -404,6 +424,14 @@ export default {
     updateConnectivityError: function (errorInfo) {
       EventBus.emit('connectivity-error', errorInfo);
     },
+    openAcupointsSearch: function (term) {
+      this.drawerOpen = true
+      // Because refs are in v-for, nextTick is needed here
+      this.$nextTick(() => {
+        const tabRef = this.getTabRef(undefined, 'acupoints', true);
+        tabRef.search(term);
+      })
+    },
     /**
      * Store available anatomy facets data for connectivity list component
      */
@@ -484,6 +512,11 @@ export default {
     // This should respect the information provided by the property
     tabEntries: function () {
       return this.tabs.filter((tab) =>
+        (tab.type === "acupoints" && 
+          (
+            this.acupointsInfoList &&
+            Object.keys(this.acupointsInfoList).length > 0
+        )) ||
         tab.type === "datasetExplorer" ||
         tab.type === "connectivityExplorer" ||
         (
@@ -544,6 +577,16 @@ export default {
     })
     EventBus.on('connectivity-source-change', (payLoad) => {
       this.$emit('connectivity-source-change', payLoad);
+    })
+
+    // Emit acupoints clicked event
+    EventBus.on('acupoints-clicked', (payLoad) => {
+      this.$emit('acupoints-clicked', payLoad);
+    })
+
+    // Emit acupoints hovered event
+    EventBus.on('acupoints-hovered', (payLoad) => {
+      this.$emit('acupoints-hovered', payLoad);
     })
 
     // Get available anatomy facets for the connectivity info

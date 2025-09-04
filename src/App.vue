@@ -18,6 +18,7 @@
       <el-button @click="keywordSearch">keyword search</el-button>
       <el-button @click="getFacets">Get facets</el-button>
       <el-button @click="toggleCreateData">Create Data/Annotation</el-button>
+      <el-button @click="searchAcupoints">Search Acupoints</el-button>
       <el-button @click="openConnectivitySearch()">Connectivity Search</el-button>
     </div>
     <SideBar
@@ -26,14 +27,18 @@
       ref="sideBar"
       :visible="sideBarVisibility"
       :annotationEntry="annotationEntry"
+      :acupointsInfoList="acupoints"
       :createData="createData"
       :connectivityEntry="connectivityEntry"
       :connectivityKnowledge="connectivityKnowledge"
       :showVisibilityFilter="true"
+      :tabs="tabArray"
       @search-changed="searchChanged($event)"
       @hover-changed="hoverChanged($event)"
       @connectivity-hovered="onConnectivityHovered"
       @actionClick="action"
+      @acupoints-clicked="onAcupointsClicked"
+      @acupoints-hovered="onAcupointsHovered"
       @connectivity-collapse-change="onConnectivityCollapseChange"
     />
   </div>
@@ -42,6 +47,7 @@
 <script>
 /* eslint-disable no-alert, no-console */
 // optionally import default styles
+import { acupointEntries } from './acupoints.js'
 import SideBar from './components/SideBar.vue'
 import EventBus from './components/EventBus.js'
 import exampleConnectivityInput from './exampleConnectivityInput.js'
@@ -121,6 +127,14 @@ export default {
   },
   data: function () {
     return {
+      acupoints: acupointEntries,
+      contextArray: [null, null],
+      tabArray: [
+        { title: 'Dataset Explorer', id: 1, type: 'datasetExplorer', closable: false },
+        { title: 'Connectivity Explorer', id: 2, type: 'connectivityExplorer', closable: false },
+        { title: 'Annotation', id: 3, type: 'annotation', closable: true },
+        {title: 'Acupoints', id: 4, type: 'acupoints' },
+      ],
       annotationEntry: [{
         featureId: "epicardium",
         resourceId: "https://mapcore-bucket1.s3-us-west-2.amazonaws.com/others/29_Jan_2020/heartICN_metadata.json",
@@ -156,6 +170,12 @@ export default {
     }
   },
   methods: {
+    onAcupointsClicked: function (data) {
+      console.log("acupoints-clicked", data)
+    },
+    onAcupointsHovered: function (data) {
+      console.log("acupoints-hovered", data)
+    },
     loadConnectivityKnowledge: async function () {
       const sql = `select knowledge from knowledge
         where source="${this.sckanVersion}"
@@ -231,6 +251,9 @@ export default {
         [],
         'http://purl.obolibrary.org/obo/UBERON_0001103'
       )
+    },
+    searchAcupoints: function() {
+      this.$refs.sideBar.openAcupointsSearch("LU 1")
     },
     singleFacets: function () {
       this.$refs.sideBar.addFilter({
@@ -406,4 +429,4 @@ body {
   align-items: center;
   gap: 0.5rem;
 }
-</style>
+</style>./acupoints.js
