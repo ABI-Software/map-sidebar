@@ -326,6 +326,9 @@ export default {
       const tabInfo = matchedTab.length ? matchedTab : this.tabEntries;
       const tabRef = tabInfo[0].type + 'Tab_' + tabInfo[0].id;
       if (switchTab) this.setActiveTab({ id: tabInfo[0].id, type: tabInfo[0].type });
+      if (!this.$refs[tabRef] || this.$refs[tabRef].length === 0) {
+        return null;
+      }
       return this.$refs[tabRef][0];
     },
     /**
@@ -442,15 +445,31 @@ export default {
       EventBus.emit('close-connectivity');
     },
     updateState: function () {
-      const datasetExplorerTabRef = this.getTabRef(undefined, 'datasetExplorer');
-      const connectivityExplorerTabRef = this.getTabRef(undefined, 'connectivityExplorer');
       this.state.activeTabId = this.activeTabId;
-      this.state.dataset.search = datasetExplorerTabRef.getSearch();
-      this.state.dataset.filters = removeShowAllFacets(datasetExplorerTabRef.getFilters());
-      this.state.connectivity.search = connectivityExplorerTabRef.getSearch();
-      this.state.connectivity.filters = connectivityExplorerTabRef.getFilters();
-      this.state.connectivityEntries = this.connectivityEntry.map((entry) => entry.id);
-      this.state.annotationEntries = this.annotationEntry.map((entry) => entry.models);
+
+      // Update dataset explorer state if available
+      const datasetExplorerTabRef = this.getTabRef(undefined, 'datasetExplorer');
+      if (datasetExplorerTabRef) {
+        this.state.dataset.search = datasetExplorerTabRef.getSearch();
+        this.state.dataset.filters = removeShowAllFacets(datasetExplorerTabRef.getFilters());
+      }
+
+      // Update connectivity explorer state if available
+      const connectivityExplorerTabRef = this.getTabRef(undefined, 'connectivityExplorer');
+      if (connectivityExplorerTabRef) {
+        this.state.connectivity.search = connectivityExplorerTabRef.getSearch();
+        this.state.connectivity.filters = connectivityExplorerTabRef.getFilters();
+      }
+
+      // Update connectivity entries if available
+      if (this.connectivityEntry && this.connectivityEntry.length > 0) {
+        this.state.connectivityEntries = this.connectivityEntry.map((entry) => entry.id);
+      }
+
+      // Update annotation entries if available
+      if (this.annotationEntry && this.annotationEntry.length > 0) {
+        this.state.annotationEntries = this.annotationEntry.map((entry) => entry.models);
+      }
     },
     /**
      * This function returns the current state of the sidebar

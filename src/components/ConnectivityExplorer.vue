@@ -518,7 +518,7 @@ export default {
 
       EventBus.emit('trackEvent', {
         'event_name': `portal_maps_connectivity_perPage`,
-        'category': val,
+        'category': val + '',
         'location': 'map_sidebar_connectivity',
       });
 
