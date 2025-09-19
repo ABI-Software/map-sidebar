@@ -291,7 +291,7 @@ export default {
       if (children?.length) {
         children.forEach((facetItem, i) => {
           //copy the facets into
-          if (children[i].facetPropPath !== 'pennsieve.organization.name') {
+          if (children[i].facetPropPath !== 'supportingAwards.consortium.name') {
             children[i].label = convertReadableLabel(
               facetItem.label
             )

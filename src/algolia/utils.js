@@ -42,10 +42,10 @@ export const facetPropPathMapping = [
     facetSubpropPath: 'attributes.subject.ageCategory.subcategory.name'
   },
   {
-    label: 'Funding Program',
-    id: 'pennsieve.organization',
-    facetPropPath: 'pennsieve.organization.name',
-    facetSubpropPath: 'pennsieve.organization.subcategory.name'
+    label: 'Consortia',
+    id: 'supportingAwards.consortium',
+    facetPropPath: 'supportingAwards.consortium.name',
+    facetSubpropPath: 'supportingAwards.consortium.subcategory.name'
   },
 ]
 
@@ -55,7 +55,7 @@ export const shownFilters = {
   'organisms.primary.species.name': 'Species',
   'attributes.subject.sex.value': 'Sex',
   'attributes.subject.ageCategory.value': 'Age Categories',
-  'pennsieve.organization.name': 'Funding Program',
+  'supportingAwards.consortium.name': 'Consortia',
   'item.types.name': 'Data type',
 }
 
