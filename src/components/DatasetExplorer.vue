@@ -161,6 +161,7 @@ export default {
         display: 'flex',
       },
       cascaderIsReady: false,
+      anatomyInDatasets: [],
     }
   },
   computed: {
@@ -304,14 +305,15 @@ export default {
       // Algolia search
       this.loadingCards = true
       this.algoliaClient
-        .anatomyInSearch(getFilters(filters), query)
+        .anatomyInSearch(getFilters(filters, this.anatomyInDatasets), query)
         .then((r) => {
           // Send result anatomy to the scaffold and flatmap
+          this.anatomyInDatasets = r.forFlatmap;
           EventBus.emit('anatomy-in-datasets', r.forFlatmap)
           EventBus.emit('number-of-datasets-for-anatomies', r.forScaffold)
         })
       this.algoliaClient
-        .search(getFilters(filters), query, this.numberPerPage, this.page)
+        .search(getFilters(filters, this.anatomyInDatasets), query, this.numberPerPage, this.page)
         .then((searchData) => {
           this.numberOfHits = searchData.total
           this.discoverIds = searchData.discoverIds
