@@ -282,7 +282,14 @@ export class AlgoliaClient {
                 return o.curie
               }
             }).filter(Boolean)
-          : []
+          : [],
+        labels: h.anatomy
+          ? h.anatomy.organ.map(o => {
+              if (filteredOrganNames.includes(o.name.toLowerCase())) {
+                return o.name
+              }
+            }).filter(Boolean)
+          : [],
       }
       return data
     })
@@ -299,7 +306,7 @@ export class AlgoliaClient {
     const anatomyOrganSubcategoryNames = anatomyOrganSubcategoryName ? Object.keys(anatomyOrganSubcategoryName) : []
     const anatomyOrganSubsubcategoryNames = anatomyOrganSubsubcategoryName ? Object.keys(anatomyOrganSubsubcategoryName) : []
     const filteredOrganNames = []
-  
+
     anatomyOrganCategoryNames.forEach((_categoryName) => {
       const categoryName = _categoryName.toLowerCase();
       anatomyOrganNames.forEach((_organName) => {
@@ -313,7 +320,7 @@ export class AlgoliaClient {
           } else {
             return anatomyOrganSubsubcategoryNames.find((name) => {
               const fullsubsubname = `${subcategoryName}.${organName}`
-              return (fullsubsubname === name) 
+              return (fullsubsubname === name)
             })
           }
         });
