@@ -161,7 +161,7 @@ export default {
         y: 0,
       },
       createDataSet: false,
-      sckanVersion: 'sckan-2024-09-21-npo',
+      sckanVersion: 'sckan-2024-09-21',
       flatmapKnowledge: [],
       connectivityKnowledge: [],
       query: '',
@@ -184,7 +184,7 @@ export default {
       const mappedData = response.values.map(x => x[0]);
       const knowledge = mappedData.map(x => JSON.parse(x));
       this.flatmapKnowledge = knowledge.filter((item) => {
-        if (item.source === this.sckanVersion && item.connectivity?.length) return true;
+        if (item.connectivity?.length) return true;
         return false;
       });
       this.connectivityKnowledge = this.flatmapKnowledge;

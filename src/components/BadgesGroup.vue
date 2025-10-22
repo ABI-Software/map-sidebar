@@ -61,7 +61,7 @@ export default {
     },
     addSimulationsToCategories: function (array) {
       if (array && array.length > 0) {
-        const size = 1
+        const size = array.length
         this.categories['Simulations'] = { size }
         this.categories['All'].size += size
       }

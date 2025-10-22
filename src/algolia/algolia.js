@@ -27,7 +27,6 @@ export class AlgoliaClient {
       algoliaKey
     )
     this.PENNSIEVE_API_LOCATION = PENNSIEVE_API_LOCATION
-    this.anatomyFacetLabels = []
   }
   initIndex(ALGOLIA_INDEX) {
     this.index = this.client.initIndex(ALGOLIA_INDEX);
@@ -165,32 +164,17 @@ export class AlgoliaClient {
   }
 
   _processAnatomy(hits) {
-    let foundKeyWords = []
-    let foundLabels = []
-    let uniqueLabels = []
-    let uniqueKeywords = []
+    const anatomyUberonMapping = {}
     hits.forEach(hit => {
-      if (hit.item && hit.item.keywords) {
-        hit.item.keywords.forEach(keywordObj => {
-          let keyword = keywordObj.keyword.toUpperCase()
-          if (keyword.includes('UBERON') || keyword.includes('ILX')) {
-            foundKeyWords.push(this._processUberonURL(keyword))
-          }
-        })
-      }
       if (hit.anatomy && hit.anatomy.organ ) {
         hit.anatomy.organ.forEach(anatomy => {
           if (anatomy.curie) {
-            foundKeyWords.push(anatomy.curie)
-            foundLabels.push(anatomy.name)
+            anatomyUberonMapping[anatomy.curie] = anatomy.name;
           }
         })
       }
+      localStorage.setItem('available-name-curie-mapping', JSON.stringify(anatomyUberonMapping))
     })
-    uniqueKeywords = [...new Set(foundKeyWords) ]
-    uniqueLabels = [...new Set(foundLabels) ]
-    this.anatomyFacetLabels = uniqueLabels
-    return uniqueKeywords
   }
 
   _processUberonURL(url) {
@@ -256,7 +240,6 @@ export class AlgoliaClient {
         })
         .then(response => {
           // Saving the line below incase we want to starty using keywords again
-          // let anatomyAsUberons = this._processAnatomy(response.hits)
           resolve({
             forFlatmap: this.processResultsForFlatmap(response.facets ,response.hits),
             forScaffold: this.processResultsForScaffold(response.hits)
@@ -264,6 +247,29 @@ export class AlgoliaClient {
         })
     })
   }
+
+  setLocalStorageForTermMapping() {
+    return new Promise(resolve => {
+      this.index
+        .search('', {
+          facets: ['*'],
+          hitsPerPage: 999999,
+          page: 0,
+          attributesToHighlight: [],
+          attributesToRetrieve: [
+            'objectID',
+            'item.keywords.keyword',
+            'anatomy.organ.name',
+            'anatomy.organ.curie'
+          ],
+        })
+        .then(response => {
+          // Saving the line below incase we want to starty using keywords again
+          this._processAnatomy(response.hits)
+        })
+    })
+  }
+
   processResultsForFlatmap(facets, hits) {
     const filteredOrganNames = this.filterAvailableAnatomies(facets);
 
@@ -300,7 +306,6 @@ export class AlgoliaClient {
         const organName = _organName.toLowerCase();
         //This will be incorrect for subsubcategory
         const fullName = `${categoryName}.${organName}`
-        const foundNamesInSubsub = []
         const found = anatomyOrganSubcategoryNames.some((_subcategoryName) => {
           const subcategoryName = _subcategoryName.toLowerCase();
           if (subcategoryName === fullName) {

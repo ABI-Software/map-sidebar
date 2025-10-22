@@ -90,23 +90,44 @@
         </el-popover>
       </div>
       <div class="block buttons-row">
-        <span>Connectivity from:</span>
-        <el-radio-group v-model="connectivitySource" @change="onConnectivitySourceChange">
-          <el-radio value="map" :disabled="noMapConnectivity">Map</el-radio>
-          <el-radio value="sckan">SCKAN</el-radio>
-        </el-radio-group>
-        <el-button
-          :class="activeView === 'listView' ? 'button' : 'el-button-secondary'"
-          @click="switchConnectivityView('listView')"
-        >
-          List view
-        </el-button>
-        <el-button
-          :class="activeView === 'graphView' ? 'button' : 'el-button-secondary'"
-          @click="switchConnectivityView('graphView')"
-        >
-          Graph view
-        </el-button>
+        <div class="population-display-source">
+          <span>
+            Connectivity from:
+            <el-popover
+              width="320"
+              trigger="hover"
+              :teleported="false"
+              popper-class="popover-origin-help"
+            >
+              <template #reference>
+                <el-icon class="info"><el-icon-warning /></el-icon>
+              </template>
+              <span style="word-break: keep-all">
+                <strong>Map</strong> - connectivity as defined in displayed map
+                <br>
+                <strong>SCKAN</strong> - connectivity as defined in SCKAN
+              </span>
+            </el-popover>
+          </span>
+          <el-radio-group v-model="connectivitySource" @change="onConnectivitySourceChange">
+            <el-radio value="map" :disabled="noMapConnectivity">Map</el-radio>
+            <el-radio value="sckan">SCKAN</el-radio>
+          </el-radio-group>
+        </div>
+        <div class="population-display-view">
+          <el-button
+            :class="activeView === 'listView' ? 'button' : 'el-button-secondary'"
+            @click="switchConnectivityView('listView')"
+          >
+            List view
+          </el-button>
+          <el-button
+            :class="activeView === 'graphView' ? 'button' : 'el-button-secondary'"
+            @click="switchConnectivityView('graphView')"
+          >
+            Graph view
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -873,9 +894,34 @@ export default {
     justify-content: space-between;
     width: 100%;
   }
+}
 
-  .el-radio {
-    margin-right: 1rem;
+.population-display-source {
+  text-align: left;
+
+  .el-radio,
+  .info {
+    margin: 0;
+  }
+
+  .info {
+    display: inline-block;
+    vertical-align: middle;
+    margin-top: -1rem;
+  }
+
+  .el-radio-group {
+    gap: 0.5rem;
+  }
+
+  :deep(.el-radio__label) {
+    padding-left: 4px;
+  }
+}
+
+.population-display-view {
+  .el-button + .el-button {
+    margin-left: 0.5rem !important;
   }
 }
 
@@ -995,6 +1041,24 @@ export default {
     border: 1px solid;
     border-color: $app-primary-color;
     background: #f3ecf6;
+  }
+}
+
+:deep(.popover-origin-help.el-popover) {
+  font-family: 'Asap', sans-serif;
+  background: #f3ecf6 !important;
+  border: 1px solid $app-primary-color !important;
+  border-radius: 4px !important;
+  color: #303133 !important;
+  text-transform: none !important; // need to overide the tooltip text transform
+  font-weight: 400;
+
+  .el-popper__arrow {
+    &:before {
+      background: #f3ecf6 !important;
+      border-color: $app-primary-color;
+      background-color: #ffffff;
+    }
   }
 }
 

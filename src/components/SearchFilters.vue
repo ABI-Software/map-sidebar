@@ -289,9 +289,10 @@ export default {
     },
     createChildrenCascaderValue: function(children, facet, facets) {
       if (children?.length) {
-        children.forEach((facetItem, i) => {
+        for (let i = 0; i < children.length; i++) {
+          const facetItem = children[i];
           //copy the facets into
-          if (children[i].facetPropPath !== 'pennsieve.organization.name') {
+          if (children[i].facetPropPath !== 'supportingAwards.consortium.name') {
             children[i].label = convertReadableLabel(
               facetItem.label
             )
@@ -307,7 +308,7 @@ export default {
             children[i].value = this.createCascaderItemValue(newFacets)
             this.createChildrenCascaderValue(facetItem.children, facet, newFacets)
           }
-        })
+        }
       }
     },
     getNodeKey: function (nodeValue) {
@@ -328,25 +329,28 @@ export default {
       )
     },
     processOptions: function () {
-      // create top level of options in cascader
-      this.options.forEach((facet, i) => {
-        this.options[i].total = this.countTotalFacet(facet)
+      // Create a deep copy to avoid triggering reactivity during processing
+      const processedOptions = JSON.parse(JSON.stringify(this.options));
 
-        this.options[i].label = convertReadableLabel(facet.label)
-        this.options[i].value = this.createCascaderItemValue(
+      // create top level of options in cascader
+      processedOptions.forEach((facet, i) => {
+        processedOptions[i].total = this.countTotalFacet(facet)
+
+        processedOptions[i].label = convertReadableLabel(facet.label)
+        processedOptions[i].value = this.createCascaderItemValue(
           [facet.key]
         )
 
-        if (!this.options[i].children.find((child) => child.label === 'Show all')) {
+        if (!processedOptions[i].children.find((child) => child.label === 'Show all')) {
           // put "Show all" as first option
-          this.options[i].children.unshift({
+          processedOptions[i].children.unshift({
             value: this.createCascaderItemValue(['Show all']),
             label: 'Show all',
           })
         }
 
         if (facet.key.includes('flatmap.connectivity.source')) {
-          this.options[i].children.unshift({
+          processedOptions[i].children.unshift({
             value: this.createCascaderItemValue(['ConnectivityFilters']),
             label: 'Filters',
             disabled: true,
@@ -354,8 +358,11 @@ export default {
         }
 
         // populate second level of options
-        this.createChildrenCascaderValue(this.options[i].children, facet, [facet.label])
+        this.createChildrenCascaderValue(processedOptions[i].children, facet, [facet.label])
       })
+
+      // trigger reactivity only once
+      Object.assign(this.options, processedOptions);
     },
     populateCascader: function () {
       if (this.entry.options) {
@@ -1129,6 +1136,7 @@ export default {
         this.envVars.PENNSIEVE_API_LOCATION
       ))
       this.algoliaClient.initIndex(this.envVars.ALGOLIA_INDEX)
+      this.algoliaClient.setLocalStorageForTermMapping()
     }
     this.populateCascader().then(() => {
       this.cascaderIsReady = true
