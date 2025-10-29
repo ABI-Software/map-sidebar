@@ -87,7 +87,7 @@ export default {
   props: {
     entry: {
       type: Object,
-      default: () => initial_state,
+      default: () => {},
     },
   },
   data: function () {
@@ -143,7 +143,8 @@ export default {
               value["Indications"],
               value["Acupuncture Method"],
               value["Vasculature"],
-              value["Innervation"]
+              value["Innervation"],
+              value["Note"],
             ];
             const allstrings = searchFields.join();
             const myJSON = allstrings.toLowerCase();
@@ -158,7 +159,6 @@ export default {
       this.numberOfHits = this.results.length
       this.searchInput = input
       this.lastSearch = input
-      console.log(this.numberOfHits)
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val

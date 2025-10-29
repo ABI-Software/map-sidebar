@@ -24,6 +24,7 @@
                 @blur="field['isEditing'] = false"
                 @keyup.enter="field['isEditing'] = false"
                 @vue:mounted="inputMounted"
+                type="textarea"
               />
             </div>
           </template>
@@ -72,7 +73,7 @@ export default {
       EventBus.emit('acupoints-hovered', data);
     },
     inputMounted: function(event) {
-      event.el?.querySelector('input')?.focus();
+      event.el?.querySelector('textarea')?.focus();
     }
   }
 }
