@@ -1,6 +1,6 @@
 {
   "name": "@abi-software/map-side-bar",
-  "version": "2.11.2",
+  "version": "2.11.4",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@abi-software/gallery": "^1.2.0",
-    "@abi-software/map-utilities": "1.7.6",
+    "@abi-software/map-utilities": "1.7.7",
     "@abi-software/svg-sprite": "^1.0.2",
     "@element-plus/icons-vue": "^2.3.1",
     "algoliasearch": "^4.10.5",

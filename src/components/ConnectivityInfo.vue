@@ -103,9 +103,9 @@
                 <el-icon class="info"><el-icon-warning /></el-icon>
               </template>
               <span style="word-break: keep-all">
-                <strong>Map</strong> - connectivity as defined in displayed map
+                <strong>Map</strong> - connectivity as defined in active map.
                 <br>
-                <strong>SCKAN</strong> - connectivity as defined in SCKAN
+                <strong>SCKAN</strong> - connectivity as defined in SCKAN.
               </span>
             </el-popover>
           </span>

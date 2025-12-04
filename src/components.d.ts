@@ -7,8 +7,6 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
-    AcupointsCard: typeof import('./components/AcupointsCard.vue')['default']
-    AcupointsInfoSearch: typeof import('./components/AcupointsInfoSearch.vue')['default']
     AnnotationTool: typeof import('./components/AnnotationTool.vue')['default']
     BadgesGroup: typeof import('./components/BadgesGroup.vue')['default']
     ConnectivityCard: typeof import('./components/ConnectivityCard.vue')['default']
