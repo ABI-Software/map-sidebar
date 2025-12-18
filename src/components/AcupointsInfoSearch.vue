@@ -1,51 +1,50 @@
 <template>
   <div v-if="entry" class="main">
     <div class="header">
-      <el-input
-        class="search-input"
-        placeholder="Search"
-        v-model="searchInput"
-        @keyup="search(searchInput)"
-        clearable
-        @clear="clearSearchClicked"
-      ></el-input>
-      <el-button
-        v-show="false"
-        type="primary"
-        class="button"
-        @click="search(searchInput)"
-        size="large"
-      >
-        Search
-      </el-button>
-      <el-button
-        v-show="false"
-        type="primary"
-        class="button"
-        @click="save()"
-        size="large"
-      >
-        Save
-      </el-button>
-      <el-button
-        v-show="false"
-        type="primary"
-        class="button"
-        @click="load()"
-        size="large"
-      >
-        Load
-      </el-button>
-
+      <el-row>
+        <el-input
+          class="search-input"
+          placeholder="Search"
+          v-model="searchInput"
+          @keyup="search(searchInput)"
+          clearable
+          @clear="clearSearchClicked"
+        ></el-input>
+        <el-button
+          v-show="false"
+          type="primary"
+          class="button"
+          @click="search(searchInput)"
+          size="large"
+        >
+          Search
+        </el-button>
+      </el-row>
+      <el-row>
+        <span class="filterText">
+          Display:&nbsp;&nbsp;
+        </span>
+        <el-radio-group v-model="currentFilter" size="small" class="acuRadioGroup">
+          <el-radio-button
+            v-for="(value, key) in filters"
+            :key="key"
+            :label="key"
+            :value="value"
+          />
+        </el-radio-group>
+      </el-row>
     </div>
     <div class="content scrollbar" ref="content">
-      <div v-for="result in paginatedResults" :key="result.Acupoint" class="step-item">
+      <div v-if="paginatedResults.length > 0" v-for="result in paginatedResults" :key="result.Acupoint" class="step-item">
         <AcupointsCard
           class="dataset-card"
           :entry="result"
           @mouseenter="hoverChanged(result)"
           @mouseleave="hoverChanged(undefined)"
         />
+      </div>
+      <div v-else class="error-feedback">
+        No results found - Please change your search / filter criteria.
       </div>
       <el-pagination
         class="pagination"
@@ -66,10 +65,13 @@
 import {
   ElButton as Button,
   ElCard as Card,
+  ElRadioButton as RadioButton,
+  ElRadioGroup as RadioGroup,
   ElDrawer as Drawer,
   ElIcon as Icon,
   ElInput as Input,
   ElPagination as Pagination,
+  ElRow as Row,
 } from 'element-plus'
 import AcupointsCard from './AcupointsCard.vue'
 
@@ -78,10 +80,13 @@ export default {
     AcupointsCard,
     Button,
     Card,
+    RadioButton,
+    RadioGroup,
     Drawer,
     Icon,
     Input,
-    Pagination
+    Pagination,
+    Row
   },
   name: 'AcupointsInfoSearch',
   props: {
@@ -92,6 +97,14 @@ export default {
   },
   data: function () {
     return {
+      filters: {
+        "Curated Only": "Curated",
+        "Uncurated Only": "Uncurated",
+        "Both": "Both"
+      },
+      currentFilter: "Both",
+      previousFilter: undefined,
+      previousInput: undefined,
       results: [],
       paginatedResults: [],
       searchInput: "",
@@ -102,6 +115,15 @@ export default {
     }
   },
   watch: {
+    currentFilter: {
+      handler: function () {
+        this.search(
+          this.searchInput,
+          this.numberPerPage,
+          this.page
+        )
+      },
+    },
     entry: {
       handler: function () {
         this.search(
@@ -128,12 +150,21 @@ export default {
     },
     search: function(input) {
       this.results = []
-      if (input !== this.previousSearch) {
+      if ((input !== this.previousInput) ||
+        (this.currentFilter !== this.previousFilter)) {
+        this.previousFilter = this.currentFilter
+        this.previousInput = this.input
+        let filteredList = Object.values(this.entry)
+        if (this.currentFilter !== "Both") {
+          const curated = this.currentFilter === "Curated" ? true : false
+          filteredList = filteredList.filter(
+            item => (item.Curated ? true : false) === curated)
+        }
         if (input === "") {
-          this.results = Object.values(this.entry)
+          this.results = filteredList
         } else {
           const lowerCase = input.toLowerCase()
-          for (const value of Object.values(this.entry)) {
+          for (const value of filteredList) {
             const searchFields = [
               value["Acupoint"],
               value["Synonym"],
@@ -181,6 +212,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+.acuRadioGroup {
+  padding-top: 8px;
+}
+
 .dataset-card {
   position: relative;
 
@@ -220,7 +256,7 @@ export default {
   border-top: 1px solid var(--el-border-color);
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: 1rem;
   padding: 1rem;
 }
 
@@ -314,6 +350,10 @@ export default {
   background-color: #e4e7ed;
 }
 
+.filterText {
+  margin-top:8px;
+}
+
 .scrollbar::-webkit-scrollbar-track {
   border-radius: 10px;
   background-color: #f5f5f5;
@@ -338,5 +378,12 @@ export default {
 :deep(.my-drawer) {
   background: rgba(0, 0, 0, 0);
   box-shadow: none;
+}
+
+.error-feedback {
+  font-family: Asap;
+  font-size: 14px;
+  font-style: italic;
+  padding-top: 15px;
 }
 </style>
