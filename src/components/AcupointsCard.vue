@@ -8,26 +8,30 @@
         @mouseleave="cardHovered(undefined)"
       >
         <div class="card-right">
-          <div class="title">Acupoint: {{ entry.Acupoint }}</div>
-          <template v-for="field in displayFields" :key="field['name']">
-            <div class="details" >
-              <strong>{{ field['name'] }}: </strong>
-              <span
-                v-if="!field['isEditing']"
-                @click="field['isEditing'] = true"
-              >
-                {{ entry[field['name']] || 'Not Available' }}
-              </span>
-              <el-input
-                v-else
-                v-model="entry[field['name']]"
-                @blur="field['isEditing'] = false"
-                @keyup.enter="field['isEditing'] = false"
-                @vue:mounted="inputMounted"
-                type="textarea"
-              />
-            </div>
-          </template>
+          <div class="title">{{ entry.Acupoint }}</div>
+          <el-collapse class="collapse-card" v-model="expanded" @change="expandedChanged">
+            <el-collapse-item :title="showDetailsText" name="1" class="collapse-card">
+              <template v-for="field in displayFields" :key="field['name']">
+                <div class="details" >
+                  <strong>{{ field['name'] }}: </strong>
+                  <span
+                    v-if="!field['isEditing']"
+                    @click="field['isEditing'] = true"
+                  >
+                    {{ entry[field['name']] || 'Not Available' }}
+                  </span>
+                  <el-input
+                    v-else
+                    v-model="entry[field['name']]"
+                    @blur="field['isEditing'] = false"
+                    @keyup.enter="field['isEditing'] = false"
+                    @vue:mounted="inputMounted"
+                    type="textarea"
+                  />
+                </div>
+              </template>
+          </el-collapse-item>
+          </el-collapse>
         </div>
       </div>
     </div>
@@ -41,6 +45,7 @@ import EventBus from './EventBus.js'
 export default {
   data() {
     return {
+      expanded: [],
       displayFields: [
         {name: "Synonym", isEditing: false},
         {name: "Chinese Name", isEditing: false},
@@ -55,6 +60,15 @@ export default {
     }
   },
   name: 'AcupointsCard',
+  computed: {
+    showDetailsText: function() {
+      if (this.expanded.length > 0) {
+        return "Click here to hide information"
+      } else {
+        return "Click here to show more information"
+      }
+    }
+  },
   props: {
     /**
      * Object containing information for
@@ -66,6 +80,11 @@ export default {
     },
   },
   methods: {
+    expandedChanged: function() {
+      if (this.expanded.length > 0) {
+        EventBus.emit('acupoints-clicked', this.entry);
+      }
+    },
     cardClicked: function (data) {
       EventBus.emit('acupoints-clicked', data);
     },
@@ -80,11 +99,17 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.collapse-card {
+  border-top: none;
+  :deep(.el-collapse-item__header) {
+    border-bottom: none;
+  }
+}
+
 .dataset-card {
   padding-left: 5px;
   padding-right: 5px;
   position: relative;
-  min-height: 17rem;
 }
 
 .title {
