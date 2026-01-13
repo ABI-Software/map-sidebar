@@ -2,14 +2,50 @@
   <el-card :body-style="bodyStyle" class="content-card">
     <template #header>
       <div class="header">
-        <el-input
-          class="search-input"
-          placeholder="Search"
-          v-model="searchInput"
-          @keyup="searchEvent"
-          clearable
-          @clear="clearSearchClicked"
-        ></el-input>
+        <div class="search-input-container" :class="{'is-focus': searchInput}">
+          <el-input
+            class="search-input"
+            placeholder="Search"
+            v-model="searchInput"
+            @keyup="searchEvent"
+            clearable
+            @clear="clearSearchClicked"
+          ></el-input>
+          <el-popover
+            width="350"
+            trigger="hover"
+            popper-class="filter-help-popover"
+          >
+            <template #reference>
+              <MapSvgIcon icon="help" class="help" />
+            </template>
+            <div>
+              <strong>Search rules:</strong>
+              <ul>
+                <li>
+                  <strong>Multiple Terms:</strong> Separate terms with a comma (<code>,</code>).
+                  This will find dataset that match any of the terms (an "OR" search).
+                </li>
+                <li>
+                  <strong>Exact Phrase:</strong> Terms within a comma block will be matched as exact phrase.
+                </li>
+              </ul>
+              <br/>
+              <strong>Examples:</strong>
+              <ul>
+                <li>
+                  <strong>To find by exact phrase:</strong>
+                  Searching for <code>vagus nerve</code> will find any dataset containing <code>vagus nerve</code>.
+                </li>
+                <li>
+                  <strong>To find by multiple terms:</strong>
+                  Searching for <code>kidney, vagus</code> will find data that contains either <code>kidney</code> OR <code>vagus</code>.
+                  Due to the limitation of the search engine, space between words in a comma block will be treated as comma when multiple terms search is active.
+                </li>
+              </ul>
+            </div>
+          </el-popover>
+        </div>
         <el-button
           type="primary"
           class="button"
@@ -90,6 +126,7 @@ import EventBus from './EventBus.js'
 import { AlgoliaClient } from '../algolia/algolia.js'
 import { getFilters, facetPropPathMapping } from '../algolia/utils.js'
 import { markRaw } from 'vue'
+import { MapSvgIcon, MapSvgSpriteColor } from "@abi-software/svg-sprite";
 
 // handleErrors: A custom fetch error handler to recieve messages from the server
 //    even when an error is found
@@ -130,7 +167,9 @@ export default {
     Drawer,
     Icon,
     Input,
-    Pagination
+    Pagination,
+    MapSvgIcon,
+    MapSvgSpriteColor
   },
   name: 'DatasetExplorer',
   props: {
@@ -537,6 +576,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '../assets/searchPopover.scss';
 @import '../assets/pagination.scss';
 
 .dataset-card {
@@ -575,29 +615,6 @@ export default {
   font-size: 14px;
   margin-bottom: 18px;
   text-align: left;
-}
-
-.search-input {
-  width: 298px !important;
-  height: 40px;
-  padding-right: 14px;
-
-  :deep(.el-input__inner) {
-    font-family: inherit;
-  }
-}
-
-.header {
-  .el-button {
-    font-family: inherit;
-
-    &:hover,
-    &:focus {
-      background: $app-primary-color;
-      box-shadow: -3px 2px 4px #00000040;
-      color: #fff;
-    }
-  }
 }
 
 .error-feedback {

@@ -187,24 +187,47 @@ export class AlgoliaClient {
    * This is using fetch from the Algolia API
    */
   search(filter, query = '', hitsperPage = 10, page = 1) {
+    const terms = query.replaceAll('"', '').split(",")
+    let processed = "";
+    const optionalWords = [];
+    if (terms) {
+      if (terms.length === 1 && (!(query.includes(" ")))) {
+        processed = query;
+      } else {
+        terms.forEach(term => {
+          optionalWords.push(term.trim())
+          processed += `"${term.trim()}" `;
+        });
+      }
+    }
+    processed = processed.trim()
+
+    const payload = {
+      advancedSyntax: true,
+      advancedSyntaxFeatures: ['exactPhrase'],
+      queryType: 'prefixAll',
+      facets: ['*'],
+      hitsPerPage: hitsperPage,
+      page: page - 1,
+      filters: filter,
+      attributesToHighlight: [],
+      attributesToRetrieve: [
+        'pennsieve.publishDate',
+        'pennsieve.updatedAt',
+        'item.curie',
+        'item.name',
+        'item.description',
+        'objectID',
+        'anatomy.organ.curie'
+      ],
+    }
+    if (optionalWords.length > 1) {
+      payload.optionalWords = optionalWords
+    }
+
     return new Promise(resolve => {
       this.index
-        .search(query, {
-          facets: ['*'],
-          hitsPerPage: hitsperPage,
-          page: page - 1,
-          filters: filter,
-          attributesToHighlight: [],
-          attributesToRetrieve: [
-            'pennsieve.publishDate',
-            'pennsieve.updatedAt',
-            'item.curie',
-            'item.name',
-            'item.description',
-            'objectID',
-            'anatomy.organ.curie'
-          ],
-        })
+        .search(processed, payload)
         .then(response => {
           let searchData = {
             items: this._processResultsForCards(response.hits),
@@ -299,7 +322,7 @@ export class AlgoliaClient {
     const anatomyOrganSubcategoryNames = anatomyOrganSubcategoryName ? Object.keys(anatomyOrganSubcategoryName) : []
     const anatomyOrganSubsubcategoryNames = anatomyOrganSubsubcategoryName ? Object.keys(anatomyOrganSubsubcategoryName) : []
     const filteredOrganNames = []
-  
+
     anatomyOrganCategoryNames.forEach((_categoryName) => {
       const categoryName = _categoryName.toLowerCase();
       anatomyOrganNames.forEach((_organName) => {
@@ -313,7 +336,7 @@ export class AlgoliaClient {
           } else {
             return anatomyOrganSubsubcategoryNames.find((name) => {
               const fullsubsubname = `${subcategoryName}.${organName}`
-              return (fullsubsubname === name) 
+              return (fullsubsubname === name)
             })
           }
         });
