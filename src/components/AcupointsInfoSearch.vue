@@ -262,7 +262,7 @@ export default {
 
 .step-item {
   font-size: 14px;
-  margin-bottom: 18px;
+  margin-bottom: 8px;
   text-align: left;
 }
 

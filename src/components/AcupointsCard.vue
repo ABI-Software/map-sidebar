@@ -8,9 +8,8 @@
         @mouseleave="cardHovered(undefined)"
       >
         <div class="card-right">
-          <div class="title">{{ entry.Acupoint }}</div>
           <el-collapse class="collapse-card" v-model="expanded" @change="expandedChanged">
-            <el-collapse-item :title="showDetailsText" name="1" class="collapse-card">
+            <el-collapse-item :title="entry.Acupoint" name="1" class="collapse-card">
               <template v-for="field in displayFields" :key="field['name']">
                 <div class="details" >
                   <strong>{{ field['name'] }}: </strong>
@@ -60,15 +59,6 @@ export default {
     }
   },
   name: 'AcupointsCard',
-  computed: {
-    showDetailsText: function() {
-      if (this.expanded.length > 0) {
-        return "Click here to hide information"
-      } else {
-        return "Click here to show more information"
-      }
-    }
-  },
   props: {
     /**
      * Object containing information for
@@ -99,6 +89,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+:deep(.el-collapse-item__header) {
+  font-weight: bold;
+}
+
+:deep(.el-collapse-item__content) {
+  padding-bottom: 4px;
+}
+
+:deep(.el-collapse-item__wrap) {
+  border: none;
+}
+
 .collapse-card {
   border-top: none;
   :deep(.el-collapse-item__header) {
@@ -125,7 +128,7 @@ export default {
   cursor: pointer;
 }
 .card {
-  padding-top: 18px;
+  padding-top: 12px;
   position: relative;
   display: flex;
 }
