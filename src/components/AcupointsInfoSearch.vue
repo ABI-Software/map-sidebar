@@ -22,11 +22,24 @@
       </el-row>
       <el-row>
         <span class="filterText">
-          Display:&nbsp;&nbsp;
+          Curated:&nbsp;&nbsp;
         </span>
-        <el-radio-group v-model="currentFilter" size="small" class="acuRadioGroup">
+        <el-radio-group v-model="currentFilters['curated']" size="small" class="acuRadioGroup">
           <el-radio-button
-            v-for="(value, key) in filters"
+            v-for="(value, key) in curatedFilters"
+            :key="key"
+            :label="key"
+            :value="value"
+          />
+        </el-radio-group>
+      </el-row>
+      <el-row>
+        <span class="filterText">
+          On MRI:&nbsp;&nbsp;
+        </span>
+        <el-radio-group v-model="currentFilters['mri']" size="small" class="acuRadioGroup">
+          <el-radio-button
+            v-for="(value, key) in mriFilters"
             :key="key"
             :label="key"
             :value="value"
@@ -97,13 +110,24 @@ export default {
   },
   data: function () {
     return {
-      filters: {
-        "Curated Only": "Curated",
-        "Uncurated Only": "Uncurated",
+      curatedFilters: {
+        "Yes": "Curated",
+        "No": "Uncurated",
         "Both": "Both"
       },
-      currentFilter: "Both",
-      previousFilter: undefined,
+      mriFilters: {
+        "Yes": "On",
+        "No": "Off",
+        "Both": "Both"
+      },
+      currentFilters: {
+        curated: "Both",
+        mri: "Both",
+      },
+      previousFilters: {
+        curated: "Both",
+        mri: "Both",
+      },
       previousInput: undefined,
       results: [],
       paginatedResults: [],
@@ -115,7 +139,16 @@ export default {
     }
   },
   watch: {
-    currentFilter: {
+    "currentFilters.curated": {
+      handler: function () {
+        this.search(
+          this.searchInput,
+          this.numberPerPage,
+          this.page
+        )
+      },
+    },
+    "currentFilters.mri": {
       handler: function () {
         this.search(
           this.searchInput,
@@ -151,14 +184,22 @@ export default {
     search: function(input) {
       this.results = []
       if ((input !== this.previousInput) ||
-        (this.currentFilter !== this.previousFilter)) {
-        this.previousFilter = this.currentFilter
+        (this.currentFilters['curated'] !== this.previousFilters['curated']) ||
+        (this.currentFilters['mri'] !== this.previousFilters['mri'])
+        ) {
+        this.previousFilters['curated'] = this.currentFilters['curated'];
+        this.previousFilters['mri'] = this.currentFilters['mri'];
         this.previousInput = this.input
         let filteredList = Object.values(this.entry)
-        if (this.currentFilter !== "Both") {
-          const curated = this.currentFilter === "Curated" ? true : false
+        if (this.currentFilters['curated'] !== "Both") {
+          const curated = this.currentFilters['curated'] === "Curated" ? true : false
           filteredList = filteredList.filter(
             item => (item.Curated ? true : false) === curated)
+        }
+        if (this.currentFilters['mri'] !== "Both") {
+          const curated = this.currentFilters['mri'] === "On" ? true : false
+          filteredList = filteredList.filter(
+            item => (item.onMRI ? true : false) === curated)
         }
         if (input === "") {
           this.results = filteredList

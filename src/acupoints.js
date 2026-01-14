@@ -14,6 +14,7 @@ export const acupointEntries = {
       "Vasculature": "Test data",
       "Innervation": "Test data",
       "Curated": false,
+      "onMRI": true
   },
   "LU 2": {
       "Acupoint": "LU 2",
@@ -30,6 +31,7 @@ export const acupointEntries = {
       "Vasculature": "Test data",
       "Innervation": "Test data",
       "Curated": true,
+      "onMRI": true
   },
   "ST 3": {
     "Acupoint": "ST 3",
@@ -44,6 +46,25 @@ export const acupointEntries = {
     "Indications": "Test data",
     "Acupuncture Method": "Test data",
     "Vasculature": "Test data",
-    "Innervation": "Test data"
+    "Innervation": "Test data",
+    "Curated": true,
+    "onMRI": false
+  },
+  "LR 4": {
+    "Acupoint": "LR 4",
+    "Label": "LR 4",
+    "Synonym": "Test data",
+    "UMLS CUI": "",
+    "Meridian": "STest data",
+    "Chinese Name": "Zhongfeng",
+    "English Name": "Not Available",
+    "Location": " z zxcxadadadzc.",
+    "Reference": "Test data",
+    "Indications": "Test data",
+    "Acupuncture Method": "Test data",
+    "Vasculature": "Test data",
+    "Innervation": "Test data",
+    "Curated": false,
+    "onMRI": false
   }
 }
