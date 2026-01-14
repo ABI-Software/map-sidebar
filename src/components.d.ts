@@ -7,6 +7,8 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AcupointsCard: typeof import('./components/AcupointsCard.vue')['default']
+    AcupointsInfoSearch: typeof import('./components/AcupointsInfoSearch.vue')['default']
     AnnotationTool: typeof import('./components/AnnotationTool.vue')['default']
     BadgesGroup: typeof import('./components/BadgesGroup.vue')['default']
     ConnectivityCard: typeof import('./components/ConnectivityCard.vue')['default']
@@ -19,6 +21,8 @@ declare module 'vue' {
     ElCascader: typeof import('element-plus/es')['ElCascader']
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
     ElCol: typeof import('element-plus/es')['ElCol']
+    ElCollapse: typeof import('element-plus/es')['ElCollapse']
+    ElCollapseItem: typeof import('element-plus/es')['ElCollapseItem']
     ElDrawer: typeof import('element-plus/es')['ElDrawer']
     ElDropdown: typeof import('element-plus/es')['ElDropdown']
     ElDropdownItem: typeof import('element-plus/es')['ElDropdownItem']
@@ -38,6 +42,7 @@ declare module 'vue' {
     ElPagination: typeof import('element-plus/es')['ElPagination']
     ElPopover: typeof import('element-plus/es')['ElPopover']
     ElRadio: typeof import('element-plus/es')['ElRadio']
+    ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
     ElRow: typeof import('element-plus/es')['ElRow']
     ElSelect: typeof import('element-plus/es')['ElSelect']
