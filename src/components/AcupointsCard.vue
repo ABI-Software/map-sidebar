@@ -13,20 +13,29 @@
               <template v-for="field in displayFields" :key="field['name']">
                 <div class="details" >
                   <strong>{{ field['name'] }}: </strong>
-                  <span
-                    v-if="!field['isEditing']"
-                    @click="field['isEditing'] = true"
-                  >
-                    {{ entry[field['name']] || 'Not Available' }}
-                  </span>
-                  <el-input
-                    v-else
-                    v-model="entry[field['name']]"
-                    @blur="field['isEditing'] = false"
-                    @keyup.enter="field['isEditing'] = false"
-                    @vue:mounted="inputMounted"
-                    type="textarea"
-                  />
+                  <template v-if="field['name'] === 'Link'">
+                    <a :href="entry['Link']" target="_blank">
+                      <span>
+                        Click here for more information
+                      </span>
+                    </a>
+                  </template>
+                  <template v-else>
+                    <span
+                      v-if="!field['isEditing']"
+                      @click="setFieldToEditing(field)"
+                    >
+                      {{ entry[field['name']] || 'Not Available' }}
+                    </span>
+                    <el-input
+                      v-else
+                      v-model="entry[field['name']]"
+                      @blur="field['isEditing'] = false"
+                      @keyup.enter="field['isEditing'] = false"
+                      @vue:mounted="inputMounted"
+                      type="textarea"
+                    />
+                  </template>
                 </div>
               </template>
           </el-collapse-item>
@@ -54,7 +63,8 @@ export default {
         {name: "Acupuncture Method", isEditing: false},
         {name: "Vasculature", isEditing: false},
         {name: "Innervation", isEditing: false},
-        {name: "Notes", isEditing: false},
+        {name: "Link", isEditing: false},
+        //{name: "Notes", isEditing: false},
       ]
     }
   },
@@ -67,6 +77,10 @@ export default {
     entry: {
       type: Object,
       default: () => {},
+    },
+    allowEditing: {
+      type: Boolean,
+      default: false,
     },
   },
   methods: {
@@ -83,6 +97,11 @@ export default {
     },
     inputMounted: function(event) {
       event.el?.querySelector('textarea')?.focus();
+    },
+    setFieldToEditing: function(field) {
+      if (this.allowEditing) {
+        field['isEditing'] = true;
+      }
     }
   }
 }

@@ -21,30 +21,47 @@
         </el-button>
       </el-row>
       <el-row>
-        <span class="filterText">
-          Curated:&nbsp;&nbsp;
-        </span>
-        <el-radio-group v-model="currentFilters['curated']" size="small" class="acuRadioGroup">
-          <el-radio-button
-            v-for="(value, key) in curatedFilters"
-            :key="key"
-            :label="key"
-            :value="value"
-          />
-        </el-radio-group>
+        <el-col :span="12">
+          <span class="filter-text">
+            Curated:&nbsp;&nbsp;
+          </span>
+          <el-radio-group v-model="currentFilters['curated']" size="small" class="acuRadioGroup">
+            <el-radio-button
+              v-for="(value, key) in curatedFilters"
+              :key="key"
+              :label="key"
+              :value="value"
+            />
+          </el-radio-group>
+        </el-col>
+        <el-col :span="12">
+          <span class="filter-text">
+            On MRI:&nbsp;&nbsp;
+          </span>
+          <el-radio-group v-model="currentFilters['mri']" size="small" class="acuRadioGroup">
+            <el-radio-button
+              v-for="(value, key) in mriFilters"
+              :key="key"
+              :label="key"
+              :value="value"
+            />
+          </el-radio-group>
+        </el-col>
       </el-row>
       <el-row>
-        <span class="filterText">
-          On MRI:&nbsp;&nbsp;
-        </span>
-        <el-radio-group v-model="currentFilters['mri']" size="small" class="acuRadioGroup">
-          <el-radio-button
-            v-for="(value, key) in mriFilters"
-            :key="key"
-            :label="key"
-            :value="value"
-          />
-        </el-radio-group>
+        <el-col :span="12">
+          <span class="filter-text">
+            WHO approved:&nbsp;&nbsp;
+          </span>
+          <el-radio-group v-model="currentFilters['who']" size="small" class="acuRadioGroup">
+            <el-radio-button
+              v-for="(value, key) in whoFilters"
+              :key="key"
+              :label="key"
+              :value="value"
+            />
+          </el-radio-group>
+        </el-col>
       </el-row>
     </div>
     <div class="content scrollbar" ref="content">
@@ -78,6 +95,7 @@
 import {
   ElButton as Button,
   ElCard as Card,
+  ElCol as Col,
   ElRadioButton as RadioButton,
   ElRadioGroup as RadioGroup,
   ElDrawer as Drawer,
@@ -93,6 +111,7 @@ export default {
     AcupointsCard,
     Button,
     Card,
+    Col,
     RadioButton,
     RadioGroup,
     Drawer,
@@ -120,13 +139,20 @@ export default {
         "No": "Off",
         "Both": "Both"
       },
+      whoFilters: {
+        "Yes": "Yes",
+        "No": "No",
+        "Either": "Both"
+      },
       currentFilters: {
         curated: "Both",
         mri: "Both",
+        who: "Yes",
       },
       previousFilters: {
         curated: "Both",
         mri: "Both",
+        who: "Both",
       },
       previousInput: undefined,
       results: [],
@@ -139,7 +165,7 @@ export default {
     }
   },
   watch: {
-    "currentFilters.curated": {
+    currentFilters: {
       handler: function () {
         this.search(
           this.searchInput,
@@ -147,15 +173,8 @@ export default {
           this.page
         )
       },
-    },
-    "currentFilters.mri": {
-      handler: function () {
-        this.search(
-          this.searchInput,
-          this.numberPerPage,
-          this.page
-        )
-      },
+      immediate: true,
+      deep: true,
     },
     entry: {
       handler: function () {
@@ -181,26 +200,44 @@ export default {
       this.searchInput = '';
       this.search("");
     },
+    searchUpdatedRequired: function(input) {
+      if (input !== this.previousInput) {
+        return true
+      }
+      for (const [key, value] of Object.entries(this.currentFilters)) {
+        if (value !== this.previousFilters[key]) {
+          return true
+        }
+      }
+      return false
+    },
+    getFilteredList: function() {
+      this.previousFilters['curated'] = this.currentFilters['curated']
+      this.previousFilters['mri'] = this.currentFilters['mri']
+      this.previousFilters['who'] = this.currentFilters['who']
+      let filteredList = Object.values(this.entry)
+      if (this.currentFilters['curated'] !== "Both") {
+        const curated = this.currentFilters['curated'] === "Curated" ? true : false
+        filteredList = filteredList.filter(
+          item => (item.Curated ? true : false) === curated)
+      }
+      if (this.currentFilters['mri'] !== "Both") {
+        const curated = this.currentFilters['mri'] === "On" ? true : false
+        filteredList = filteredList.filter(
+          item => (item.onMRI ? true : false) === curated)
+      }
+      if (this.currentFilters['who'] !== "Both") {
+        const who = this.currentFilters['who'] === "Yes" ? true : false
+        filteredList = filteredList.filter(
+          item => (item["Meridian Point"] ? true : false) === who)
+      }
+      return filteredList;
+    },
     search: function(input) {
       this.results = []
-      if ((input !== this.previousInput) ||
-        (this.currentFilters['curated'] !== this.previousFilters['curated']) ||
-        (this.currentFilters['mri'] !== this.previousFilters['mri'])
-        ) {
-        this.previousFilters['curated'] = this.currentFilters['curated'];
-        this.previousFilters['mri'] = this.currentFilters['mri'];
+      if (this.searchUpdatedRequired(input)) {
+        let filteredList = this.getFilteredList()
         this.previousInput = this.input
-        let filteredList = Object.values(this.entry)
-        if (this.currentFilters['curated'] !== "Both") {
-          const curated = this.currentFilters['curated'] === "Curated" ? true : false
-          filteredList = filteredList.filter(
-            item => (item.Curated ? true : false) === curated)
-        }
-        if (this.currentFilters['mri'] !== "Both") {
-          const curated = this.currentFilters['mri'] === "On" ? true : false
-          filteredList = filteredList.filter(
-            item => (item.onMRI ? true : false) === curated)
-        }
         if (input === "") {
           this.results = filteredList
         } else {
@@ -391,8 +428,9 @@ export default {
   background-color: #e4e7ed;
 }
 
-.filterText {
-  margin-top:8px;
+.filter-text {
+  top:4px;
+  position:relative;
 }
 
 .scrollbar::-webkit-scrollbar-track {

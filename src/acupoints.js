@@ -14,7 +14,9 @@ export const acupointEntries = {
       "Vasculature": "Test data",
       "Innervation": "Test data",
       "Curated": false,
-      "onMRI": true
+      "onMRI": true,
+      "Meridian Point": true,
+      "Link": "https://tara-repository.mgb.org/term_resolution/tara.html"
   },
   "LU 2": {
       "Acupoint": "LU 2",
@@ -31,7 +33,9 @@ export const acupointEntries = {
       "Vasculature": "Test data",
       "Innervation": "Test data",
       "Curated": true,
-      "onMRI": true
+      "onMRI": true,
+      "Meridian Point": false,
+      "Link": "https://tara-repository.mgb.org/term_resolution/tara.html"
   },
   "ST 3": {
     "Acupoint": "ST 3",
@@ -48,7 +52,9 @@ export const acupointEntries = {
     "Vasculature": "Test data",
     "Innervation": "Test data",
     "Curated": true,
-    "onMRI": false
+    "onMRI": false,
+    "Meridian Point": false,
+    "Link": "https://tara-repository.mgb.org/term_resolution/tara.html"
   },
   "LR 4": {
     "Acupoint": "LR 4",
@@ -65,6 +71,8 @@ export const acupointEntries = {
     "Vasculature": "Test data",
     "Innervation": "Test data",
     "Curated": false,
-    "onMRI": false
+    "onMRI": false,
+    "Meridian Point": true,
+    "Link": "https://tara-repository.mgb.org/term_resolution/tara.html"
   }
 }
