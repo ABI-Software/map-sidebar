@@ -32,12 +32,6 @@ export default {
         return []
       },
     },
-    datasetBiolucida: {
-      type: Object,
-      default: () => {
-        return {}
-      },
-    },
     entry: {
       type: Object,
       default: () => {
@@ -72,15 +66,6 @@ export default {
     },
   },
   watch: {
-    datasetBiolucida: {
-      deep: true,
-      immediate: true,
-      handler: function (biolucidaData) {
-        if ('dataset_images' in biolucidaData) {
-          this.addToCategories(biolucidaData['dataset_images'], 'Images')
-        }
-      },
-    },
     entry: {
       deep: true,
       immediate: true,
