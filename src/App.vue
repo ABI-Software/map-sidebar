@@ -134,7 +134,6 @@ export default {
         ALGOLIA_INDEX: import.meta.env.VITE_APP_ALGOLIA_INDEX,
         PENNSIEVE_API_LOCATION: import.meta.env.VITE_APP_PENNSIEVE_API_LOCATION,
         BL_SERVER_URL: import.meta.env.VITE_APP_BL_SERVER_URL,
-        NL_LINK_PREFIX: import.meta.env.VITE_APP_NL_LINK_PREFIX,
         ROOT_URL: import.meta.env.VITE_APP_ROOT_URL,
         FLATMAPAPI_LOCATION: import.meta.env.VITE_FLATMAPAPI_LOCATION,
       },

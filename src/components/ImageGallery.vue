@@ -40,12 +40,6 @@ export default {
   components: { Gallery },
   mixins: [GalleryHelper, S3Bucket],
   props: {
-    datasetBiolucida: {
-      type: Object,
-      default: () => {
-        return {}
-      },
-    },
     envVars: {
       type: Object,
       default: () => {},
@@ -89,13 +83,10 @@ export default {
       ro: null,
       maxWidth: 3,
       items: {
-        //Use the Images instead for Biolucida Images
-        //"Biolucida Images": [],
         Dataset: [],
         Flatmaps:[],
         Images: [],
         Scaffolds: [],
-        Segmentations: [],
         Simulations: [],
         Videos: [],
         Plots: [],
@@ -128,7 +119,6 @@ export default {
       this.createScaffoldItems()
       this.createSimulationItems()
       this.createPlotItems()
-      this.createSegmentationItems()
       /* Disable these two
       this.createImageItems();
       this.createVideoItems();
@@ -324,47 +314,6 @@ export default {
         })
       }
     },
-    createSegmentationItems: function () {
-      if (this.entry.segmentation) {
-        this.entry.segmentation.forEach((segmentation) => {
-          const id = segmentation.id
-          let filePath = segmentation.dataset.path
-          filePath = filePath.replaceAll(' ', '_')
-          filePath = filePath.replaceAll(',', '_')
-          const prefix = this.envVars.NL_LINK_PREFIX
-          const resource = {
-            share_link: `${prefix}/dataviewer?datasetId=${this.datasetId}&version=${this.datasetVersion}&path=files/${filePath}`,
-          }
-          let action = {
-            label: capitalise(this.label),
-            resource: resource,
-            datasetId: this.datasetId,
-            s3uri: this.entry.s3uri,
-            title: 'View segmentation',
-            type: 'Segmentation',
-          }
-          const thumbnailURL = this.getSegmentationThumbnailURL(
-            this.envVars.API_LOCATION,
-            {
-              id,
-              datasetId: this.datasetId,
-              datasetVersion: this.datasetVersion,
-              segmentationFilePath: filePath,
-              s3Bucket: this.s3Bucket,
-            }
-          )
-          this.items['Segmentations'].push({
-            id,
-            title: baseName(filePath),
-            type: 'Segmentation',
-            thumbnail: thumbnailURL,
-            userData: action,
-            hideType: true,
-            mimetype: 'image/png',
-          })
-        })
-      }
-    },
     createSimulationItems: function () {
       if (this.entry.simulation) {
         this.entry.simulation.forEach((simulation) => {
@@ -495,48 +444,6 @@ export default {
     },
     galleryItems: function () {
       this.resetIndex = false
-    },
-    datasetBiolucida: {
-      deep: true,
-      immediate: true,
-      handler: function (biolucidaData) {
-        let items = []
-        if ('dataset_images' in biolucidaData) {
-          items.push(
-            ...Array.from(biolucidaData.dataset_images, (dataset_image) => {
-              const thumbnailURL = this.getThumbnailURLFromBiolucida(
-                this.envVars.API_LOCATION,
-                {
-                  id: dataset_image.image_id,
-                }
-              )
-              const resource = {
-                share_link: dataset_image.share_link,
-                id: dataset_image.image_id,
-                itemId: dataset_image.sourcepkg_id,
-              }
-              let action = {
-                label: capitalise(this.label),
-                resource: resource,
-                datasetId: this.datasetId,
-                title: 'View image',
-                name: capitalise(this.label),
-                type: 'Biolucida',
-              }
-              return {
-                id: dataset_image.image_id,
-                title: `Image`,
-                type: 'Image',
-                thumbnail: thumbnailURL,
-                userData: action,
-                mimetype: 'image/png',
-                hideType: true,
-              }
-            })
-          )
-        }
-        this.items['Images'] = items
-      },
     },
   },
   mounted() {

@@ -92,8 +92,6 @@ https://github.com/nih-sparc/sparc-api/blob/f3444a32964f5340e0ee1f10a08a05839620
 
 ```
 ADDITIONAL_LINKS = 'additionalLinks'
-BIOLUCIDA_2D = 'biolucida-2d'
-BIOLUCIDA_3D = 'biolucida-3d'
 COMMON_IMAGES = 'common-images'
 CONTEXT_FILE = 'abi-context-file'
 CSV = 'csv'

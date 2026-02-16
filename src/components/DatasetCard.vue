@@ -12,7 +12,6 @@
             :envVars="envVars"
             :label="label"
             :datasetThumbnail="thumbnail"
-            :dataset-biolucida="biolucidaData"
             :category="currentCategory"
             @card-clicked="galleryClicked"
             @datalink-clicked="galleryDatalinkClicked"
@@ -42,7 +41,6 @@
           <div class="badges-container">
             <BadgesGroup
               :entry="entry"
-              :dataset-biolucida="biolucidaData"
               @categoryChanged="categoryChanged"
             />
           </div>
@@ -60,7 +58,6 @@
 <script>
 /* eslint-disable no-alert, no-console */
 import { View as ElIconView } from '@element-plus/icons-vue'
-import { Base64  } from 'js-base64';
 import BadgesGroup from './BadgesGroup.vue'
 import {
   ElButton as Button,
@@ -109,7 +106,6 @@ export default {
       loading: true,
       version: 1,
       lastDoi: undefined,
-      biolucidaData: undefined,
       currentCategory: 'All',
       copyContent: '',
     }
@@ -237,7 +233,6 @@ export default {
             this.discoverId = data.id
             this.version = data.version
             this.dataLocation = `https://sparc.science/datasets/${data.id}?type=dataset`
-            this.getBiolucidaInfo()
             this.loading = false
             this.updateCopyContent();
           })
@@ -251,31 +246,6 @@ export default {
     },
     lastName: function (fullName) {
       return fullName.split(',')[0]
-    },
-    getBiolucidaInfo: function () {
-      const dataset_images = [];
-      const biolucida2DItems = 'biolucida-2d' in this.entry ? this.entry['biolucida-2d'] :[];
-      const biolucida3DItems = 'biolucida-3d' in this.entry ? this.entry['biolucida-3d'] :[];
-      // We use information from SciCrunch to create the sharelink
-      biolucida2DItems.concat(biolucida3DItems).forEach((bObject) => {
-        const image_id = bObject.biolucida?.identifier;
-        if (image_id) {
-          const sourcepkg_id = 'identifier' in bObject ? bObject['identifier'] : "";
-          // The encoded string is in the following format -
-          // ${image_id}-col-${collection_id}, collection id can be any valid collection id
-          // and 260 is used for now.
-          const code = encodeURIComponent(Base64.encode(`${image_id}-col-260`));
-          const share_link = `https://sparc.biolucida.net/image?c=${code}`
-          dataset_images.push({
-            share_link,
-            image_id,
-            sourcepkg_id,
-          });
-        }
-      });
-      if (dataset_images.length > 0) {
-        this.biolucidaData = { dataset_images };
-      }
     },
     updateCopyContent: function () {
       const contentArray = [];
