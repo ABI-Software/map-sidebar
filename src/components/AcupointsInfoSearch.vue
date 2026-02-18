@@ -142,7 +142,7 @@ export default {
       whoFilters: {
         "Yes": "Yes",
         "No": "No",
-        "Either": "Both"
+        "Both": "Both"
       },
       currentFilters: {
         curated: "Both",
