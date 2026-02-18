@@ -32,12 +32,6 @@ export default {
         return []
       },
     },
-    datasetBiolucida: {
-      type: Object,
-      default: () => {
-        return {}
-      },
-    },
     entry: {
       type: Object,
       default: () => {
@@ -72,15 +66,6 @@ export default {
     },
   },
   watch: {
-    datasetBiolucida: {
-      deep: true,
-      immediate: true,
-      handler: function (biolucidaData) {
-        if ('dataset_images' in biolucidaData) {
-          this.addToCategories(biolucidaData['dataset_images'], 'Images')
-        }
-      },
-    },
     entry: {
       deep: true,
       immediate: true,
@@ -88,7 +73,6 @@ export default {
         this.addToCategories(this.entry.flatmaps, 'Flatmaps')
         this.addToCategories(this.entry.plots, 'Plots')
         this.addToCategories(this.entry.scaffolds, 'Scaffolds')
-        this.addToCategories(this.entry.segmentation, 'Segmentations')
         this.addSimulationsToCategories(this.entry.simulation)
         /** disable the following
         this.addToCategories(this.entry.images, 'Images');
@@ -117,7 +101,7 @@ export default {
       color: #fff!important;
     }
   }
-  
+
   .tag-button + .tag-button {
     margin-left: 0!important;
   }
