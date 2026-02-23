@@ -20,50 +20,16 @@
           Search
         </el-button>
       </el-row>
-      <el-row>
-        <el-col :span="12">
-          <span class="filter-text">
-            Curated:&nbsp;&nbsp;
-          </span>
-          <el-radio-group v-model="currentFilters['curated']" size="small" class="acuRadioGroup">
-            <el-radio-button
-              v-for="(value, key) in curatedFilters"
-              :key="key"
-              :label="key"
-              :value="value"
-            />
-          </el-radio-group>
-        </el-col>
-        <el-col :span="12">
-          <span class="filter-text">
-            On MRI:&nbsp;&nbsp;
-          </span>
-          <el-radio-group v-model="currentFilters['mri']" size="small" class="acuRadioGroup">
-            <el-radio-button
-              v-for="(value, key) in mriFilters"
-              :key="key"
-              :label="key"
-              :value="value"
-            />
-          </el-radio-group>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="12">
-          <span class="filter-text">
-            WHO approved:&nbsp;&nbsp;
-          </span>
-          <el-radio-group v-model="currentFilters['who']" size="small" class="acuRadioGroup">
-            <el-radio-button
-              v-for="(value, key) in whoFilters"
-              :key="key"
-              :label="key"
-              :value="value"
-            />
-          </el-radio-group>
-        </el-col>
-      </el-row>
     </div>
+    <SearchFilters
+      v-if="filterEntry.options"
+      class="filters"
+      ref="filtersRef"
+      :entry="filterEntry"
+      @filterResults="filterUpdate"
+      @numberPerPage="numberPerPageUpdate"
+      @cascaderReady="cascaderReady"
+    ></SearchFilters>
     <div class="content scrollbar" ref="content">
       <div v-if="paginatedResults.length > 0" v-for="result in paginatedResults" :key="result.Acupoint" class="step-item">
         <AcupointsCard
@@ -105,6 +71,7 @@ import {
   ElRow as Row,
 } from 'element-plus'
 import AcupointsCard from './AcupointsCard.vue'
+import SearchFilters from "./SearchFilters.vue"
 
 export default {
   components: {
@@ -114,6 +81,7 @@ export default {
     Col,
     RadioButton,
     RadioGroup,
+    SearchFilters,
     Drawer,
     Icon,
     Input,
@@ -127,27 +95,74 @@ export default {
       default: () => {},
     },
   },
+  computed: {
+    // This computed property populates filter data's entry object with $data from this sidebar
+    filterEntry: function () {
+      return {
+        numberOfHits: this.numberOfHits,
+        filterFacets: this.filters,
+        options: this.filterOptions,
+        showFilters: true,
+      };
+    },
+  },
   data: function () {
     return {
-      curatedFilters: {
-        "Yes": "Curated",
-        "No": "Uncurated",
-        "Both": "Both"
-      },
-      mriFilters: {
-        "Yes": "On",
-        "No": "Off",
-        "Both": "Both"
-      },
-      whoFilters: {
-        "Yes": "Yes",
-        "No": "No",
-        "Both": "Both"
-      },
+      filters: [],
+      filterOptions: [
+        {
+          "key": "acupoints.visualized",
+          "label": "Visualized",
+          "children": [
+            {
+                "key": "acupoints.visualized.yes",
+                "label": "Visualized",
+                "value": "Visualized>Yes"
+            },
+            {
+              "key": "acupoints.visualized.no",
+              "label": "Not visualized",
+              "value": "Visualized>No"
+            },
+          ],
+        },
+        {
+          "key": "acupoints.implied",
+          "label": "Implied",
+          "children": [
+            {
+                "key": "acupoints.implied.yes",
+                "label": "Implied",
+                "value": "Implied>Yes"
+            },
+            {
+              "key": "acupoints.implied.no",
+              "label": "Not Implied",
+              "value": "Implied>No"
+            },
+          ],
+        },
+        {
+          "key": "acupoints.WHO",
+          "label": "WHO",
+          "children": [
+            {
+                "key": "acupoints.WHO.yes",
+                "label": "WHO",
+                "value": "WHO>Yes"
+            },
+            {
+              "key": "acupoints.WHO.no",
+              "label": "Non WHO",
+              "value": "WHO>No"
+            },
+          ],
+        },
+      ],
       currentFilters: {
         curated: "Both",
         mri: "Both",
-        who: "Yes",
+        who: "Both",
       },
       previousFilters: {
         curated: "Both",
@@ -165,6 +180,7 @@ export default {
     }
   },
   watch: {
+
     currentFilters: {
       handler: function () {
         this.search(
@@ -189,6 +205,56 @@ export default {
     },
   },
   methods: {
+    cascaderReady: function () {
+      this.cascaderIsReady = true;
+      this.search(this.searchInput);
+    },
+    filterUpdate: function (filters) {
+      this.filters = [...filters]
+      console.log(this.filters)
+      this.filters.forEach((filter) => {
+        if (filter.facetPropPath === "acupoints.visualized") {
+          if (filter.facet === "Visualized") {
+            this.currentFilters['curated'] = 'Curated'
+          } else if (filter.facet === 'Not visualized') {
+            this.currentFilters['curated'] = 'Uncurated'
+          } else {
+            this.currentFilters['curated'] = 'Both'
+          }
+        }
+        if (filter.facetPropPath === "acupoints.implied") {
+          if (filter.facet === "Implied") {
+            this.currentFilters['mri'] = 'Off'
+          } else if (filter.facet === 'Not Implied') {
+            this.currentFilters['mri'] = 'On'
+          } else {
+            this.currentFilters['mri'] = 'Both'
+          }
+        }
+        if (filter.facetPropPath === "acupoints.WHO") {
+          if (filter.facet === "WHO") {
+            this.currentFilters['who'] = 'Yes'
+          } else if (filter.facet === 'Non who') {
+            this.currentFilters['who'] = 'No'
+          } else {
+            this.currentFilters['who'] = 'Both'
+          }
+        }
+      });
+      this.search( this.searchInput)
+
+      //this.search();
+      // this.$emit("search-changed", {
+      //   value: filters,
+      //   tabType: "connectivity",
+      //   type: "filter-update",
+      // });
+    },
+    numberPerPageUpdate: function (val) {
+      this.numberPerPage = val;
+      this.pageChange(1);
+
+    },
     hoverChanged: function (data) {
       this.$emit('hover-changed', data)
     },
