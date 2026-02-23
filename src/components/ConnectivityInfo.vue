@@ -90,7 +90,7 @@
         </el-popover>
       </div>
       <div class="block buttons-row">
-        <div class="population-display-source">
+        <div class="population-display-source" v-if="!hasSingleConnectivityList">
           <span>
             Connectivity from:
             <el-popover
@@ -171,22 +171,46 @@
     </div>
 
     <div class="content-container content-container-connectivity" v-show="activeView === 'listView'">
-      <connectivity-list
-        v-loading="connectivityLoading"
-        :key="`${connectivityKey}list`"
-        :entry="entry"
-        :origins="origins"
-        :components="components"
-        :destinations="destinations"
-        :originsWithDatasets="originsWithDatasets"
-        :componentsWithDatasets="componentsWithDatasets"
-        :destinationsWithDatasets="destinationsWithDatasets"
-        :availableAnatomyFacets="availableAnatomyFacets"
-        :connectivityError="connectivityError"
-        @connectivity-hovered="onConnectivityHovered"
-        @connectivity-clicked="onConnectivityClicked"
-        @connectivity-action-click="onConnectivityActionClick"
-      />
+      <!-- TODO: To use only one component when the data is ready -->
+      <temmplate v-if="hasSingleConnectivityList">
+        <connectivity-list-new
+          v-loading="connectivityLoading"
+          :key="`${connectivityKey}list`"
+          :entry="entry"
+          :origins="origins"
+          :components="components"
+          :destinations="destinations"
+          :originsWithDatasets="originsWithDatasets"
+          :componentsWithDatasets="componentsWithDatasets"
+          :destinationsWithDatasets="destinationsWithDatasets"
+          :destinationsCombinations="destinationsCombinations"
+          :originsCombinations="originsCombinations"
+          :componentsCombinations="componentsCombinations"
+          :availableAnatomyFacets="availableAnatomyFacets"
+          :connectivityError="connectivityError"
+          @connectivity-hovered="onConnectivityHovered"
+          @connectivity-clicked="onConnectivityClicked"
+          @connectivity-action-click="onConnectivityActionClick"
+        />
+      </temmplate>
+      <template v-else>
+        <connectivity-list
+          v-loading="connectivityLoading"
+          :key="`${connectivityKey}list`"
+          :entry="entry"
+          :origins="origins"
+          :components="components"
+          :destinations="destinations"
+          :originsWithDatasets="originsWithDatasets"
+          :componentsWithDatasets="componentsWithDatasets"
+          :destinationsWithDatasets="destinationsWithDatasets"
+          :availableAnatomyFacets="availableAnatomyFacets"
+          :connectivityError="connectivityError"
+          @connectivity-hovered="onConnectivityHovered"
+          @connectivity-clicked="onConnectivityClicked"
+          @connectivity-action-click="onConnectivityActionClick"
+        />
+      </template>
     </div>
 
     <div class="content-container content-container-connectivity" v-show="activeView === 'graphView'">
@@ -233,6 +257,7 @@ import {
   CopyToClipboard,
   ConnectivityGraph,
   ConnectivityList,
+  ConnectivityListNew,
   ExternalResourceCard,
 } from '@abi-software/map-utilities';
 import '@abi-software/map-utilities/dist/style.css';
@@ -261,6 +286,7 @@ export default {
     CopyToClipboard,
     ConnectivityGraph,
     ConnectivityList,
+    ConnectivityListNew,
   },
   props: {
     connectivityEntry: {
@@ -337,6 +363,18 @@ export default {
     },
     destinationsWithDatasets: function () {
       return this.entry.destinationsWithDatasets;
+    },
+    hasSingleConnectivityList: function () {
+      return this.entry.hasSingleConnectivityList;
+    },
+    destinationsCombinations: function () {
+      return this.entry.destinationsCombinations || [];
+    },
+    originsCombinations: function () {
+      return this.entry.originsCombinations || [];
+    },
+    componentsCombinations: function () {
+      return this.entry.componentsCombinations || [];
     },
     resources: function () {
       return this.entry.hyperlinks || [];
