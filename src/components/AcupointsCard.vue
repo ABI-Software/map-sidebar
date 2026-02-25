@@ -58,6 +58,7 @@ export default {
         {name: "Synonym", isEditing: false},
         {name: "Chinese Name", isEditing: false},
         {name: "English Name", isEditing: false},
+        {name: "Meridian", isEditing: false},
         {name: "Reference", isEditing: false},
         {name: "Indications", isEditing: false},
         {name: "Acupuncture Method", isEditing: false},

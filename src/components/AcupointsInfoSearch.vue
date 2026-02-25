@@ -95,6 +95,47 @@ export default {
       default: () => {},
     },
   },
+  created: function() {
+    if (this.entry) {
+      let entries = Object.values(this.entry)
+      const meridians = []
+      let others = false
+      entries.forEach((acupoint) => {
+        let meridian = acupoint.Meridian
+        if (!meridian) {
+          others = true
+        } else if (!(meridians.includes(meridian))) {
+          meridians.push(meridian)
+        }
+      });
+      meridians.sort();
+      if (others) {
+        meridians.push("Others")
+      }
+      if (meridians.length > 1) {
+        const filterOption = {
+          "key": "acupoints.meridian",
+          "label": "Meridian",
+          "children": [
+          ],
+        }
+        meridians.forEach(meridian => {
+          const entry = {
+            "key": `acupoints.meridian.${meridian}`,
+            "label": meridian,
+            "value": meridian,
+          }
+          filterOption.children.push(entry)
+        })
+        this.filterOptions.push(filterOption)
+        this.filters.push({
+          "facetPropPath": "acupoints.meridian",
+          "facet": "Show all",
+          "term": "Meridian"
+        })
+      }
+    }
+  },
   computed: {
     // This computed property populates filter data's entry object with $data from this sidebar
     filterEntry: function () {
@@ -108,7 +149,24 @@ export default {
   },
   data: function () {
     return {
-      filters: [],
+      filters: [
+          {
+              "facetPropPath": "acupoints.WHO",
+              "facet": "WHO",
+              "term": "WHO",
+              "tagLabel": "WHO"
+          },
+          {
+              "facetPropPath": "acupoints.visualized",
+              "facet": "Show all",
+              "term": "Visualized"
+          },
+          {
+              "facetPropPath": "acupoints.implied",
+              "facet": "Show all",
+              "term": "Implied"
+          }
+      ],
       filterOptions: [
         {
           "key": "acupoints.visualized",
@@ -121,7 +179,7 @@ export default {
             },
             {
               "key": "acupoints.visualized.no",
-              "label": "Not visualized",
+              "label": "Non visualized",
               "value": "Visualized>No"
             },
           ],
@@ -137,7 +195,7 @@ export default {
             },
             {
               "key": "acupoints.implied.no",
-              "label": "Not Implied",
+              "label": "Non Implied",
               "value": "Implied>No"
             },
           ],
@@ -163,13 +221,11 @@ export default {
         curated: "Both",
         mri: "Both",
         who: "Both",
+        meridian: {
+          showAll: true,
+          list: []
+        },
       },
-      previousFilters: {
-        curated: "Both",
-        mri: "Both",
-        who: "Both",
-      },
-      previousInput: undefined,
       results: [],
       paginatedResults: [],
       searchInput: "",
@@ -180,25 +236,20 @@ export default {
     }
   },
   watch: {
-
     currentFilters: {
       handler: function () {
-        this.search(
-          this.searchInput,
-          this.numberPerPage,
-          this.page
-        )
+      //  this.search(
+      //    this.searchInput,
+      //    this.numberPerPage,
+      //    this.page
+      //  )
       },
       immediate: true,
       deep: true,
     },
     entry: {
       handler: function () {
-        this.search(
-          this.searchInput,
-          this.numberPerPage,
-          this.page
-        )
+        this.filterUpdate(this.filters)
       },
       immediate: true,
       deep: true,
@@ -211,12 +262,12 @@ export default {
     },
     filterUpdate: function (filters) {
       this.filters = [...filters]
-      console.log(this.filters)
+      this.currentFilters['meridian']['list'] = []
       this.filters.forEach((filter) => {
         if (filter.facetPropPath === "acupoints.visualized") {
           if (filter.facet === "Visualized") {
             this.currentFilters['curated'] = 'Curated'
-          } else if (filter.facet === 'Not visualized') {
+          } else if (filter.facet === 'Non visualized') {
             this.currentFilters['curated'] = 'Uncurated'
           } else {
             this.currentFilters['curated'] = 'Both'
@@ -225,7 +276,7 @@ export default {
         if (filter.facetPropPath === "acupoints.implied") {
           if (filter.facet === "Implied") {
             this.currentFilters['mri'] = 'Off'
-          } else if (filter.facet === 'Not Implied') {
+          } else if (filter.facet === 'Non Implied') {
             this.currentFilters['mri'] = 'On'
           } else {
             this.currentFilters['mri'] = 'Both'
@@ -240,7 +291,16 @@ export default {
             this.currentFilters['who'] = 'Both'
           }
         }
+        if (filter.facetPropPath === "acupoints.meridian") {
+          if (filter.facet === "Show all") {
+            this.currentFilters['meridian']['showAll'] = true
+          } else {
+            this.currentFilters['meridian']['showAll'] = false
+            this.currentFilters['meridian']['list'].push(filter.facet.toLowerCase())
+          }
+        }
       });
+
       this.search( this.searchInput)
 
       //this.search();
@@ -253,7 +313,6 @@ export default {
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val;
       this.pageChange(1);
-
     },
     hoverChanged: function (data) {
       this.$emit('hover-changed', data)
@@ -266,21 +325,7 @@ export default {
       this.searchInput = '';
       this.search("");
     },
-    searchUpdatedRequired: function(input) {
-      if (input !== this.previousInput) {
-        return true
-      }
-      for (const [key, value] of Object.entries(this.currentFilters)) {
-        if (value !== this.previousFilters[key]) {
-          return true
-        }
-      }
-      return false
-    },
     getFilteredList: function() {
-      this.previousFilters['curated'] = this.currentFilters['curated']
-      this.previousFilters['mri'] = this.currentFilters['mri']
-      this.previousFilters['who'] = this.currentFilters['who']
       let filteredList = Object.values(this.entry)
       if (this.currentFilters['curated'] !== "Both") {
         const curated = this.currentFilters['curated'] === "Curated" ? true : false
@@ -297,35 +342,41 @@ export default {
         filteredList = filteredList.filter(
           item => (item["Meridian Point"] ? true : false) === who)
       }
+      if (!this.currentFilters['meridian']['showAll']) {
+        filteredList = filteredList.filter((item) => {
+          let meridian = "others"
+          if (item.Meridian) {
+            meridian = item.Meridian.toLowerCase()
+          }
+          return this.currentFilters['meridian']['list'].includes(meridian)
+        })
+      }
       return filteredList;
     },
     search: function(input) {
       this.results = []
-      if (this.searchUpdatedRequired(input)) {
-        let filteredList = this.getFilteredList()
-        this.previousInput = this.input
-        if (input === "") {
-          this.results = filteredList
-        } else {
-          const lowerCase = input.toLowerCase()
-          for (const value of filteredList) {
-            const searchFields = [
-              value["Acupoint"],
-              value["Synonym"],
-              value["Chinese Name"],
-              value["English Name"],
-              value["Reference"],
-              value["Indications"],
-              value["Acupuncture Method"],
-              value["Vasculature"],
-              value["Innervation"],
-              value["Note"],
-            ];
-            const allstrings = searchFields.join();
-            const myJSON = allstrings.toLowerCase();
-            if (myJSON.includes(lowerCase)) {
-              this.results.push(value)
-            }
+      let filteredList = this.getFilteredList()
+      if (input === "") {
+        this.results = filteredList
+      } else {
+        const lowerCase = input.toLowerCase()
+        for (const value of filteredList) {
+          const searchFields = [
+            value["Acupoint"],
+            value["Synonym"],
+            value["Chinese Name"],
+            value["English Name"],
+            value["Reference"],
+            value["Indications"],
+            value["Acupuncture Method"],
+            value["Vasculature"],
+            value["Innervation"],
+            value["Note"],
+          ];
+          const allstrings = searchFields.join();
+          const myJSON = allstrings.toLowerCase();
+          if (myJSON.includes(lowerCase)) {
+            this.results.push(value)
           }
         }
       }
@@ -334,6 +385,7 @@ export default {
       this.numberOfHits = this.results.length
       this.searchInput = input
       this.lastSearch = input
+      this.$emit("acupoints-result", this.results);
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val

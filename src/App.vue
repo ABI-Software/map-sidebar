@@ -39,6 +39,7 @@
       @actionClick="action"
       @acupoints-clicked="onAcupointsClicked"
       @acupoints-hovered="onAcupointsHovered"
+      @acupoints-result="onAcupointsResult"
       @connectivity-collapse-change="onConnectivityCollapseChange"
     />
   </div>
@@ -174,6 +175,9 @@ export default {
     },
     onAcupointsHovered: function (data) {
       console.log("acupoints-hovered", data)
+    },
+    onAcupointsResult: function (data) {
+      console.log("acupoints-result", data)
     },
     loadConnectivityKnowledge: async function () {
       const sql = `select knowledge from knowledge

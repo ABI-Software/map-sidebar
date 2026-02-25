@@ -68,7 +68,8 @@
               <acupoints-info-search
                 :ref="'acupointsTab_' + tab.id"
                 :entry="acupointsInfoList"
-                @on-acupoints-click="acupointClicked"
+                @on-acupoints-click="acupointsClicked"
+                @acupoints-result="acupointsResult"
                 v-show="tab.id === activeTabId"
               />
             </template>
@@ -223,8 +224,11 @@ export default {
      * This event is emitted with a mouse click on acupoint card
      * @arg data
      */
-    acupointClicked: function (data) {
+    acupointsClicked: function (data) {
       this.$emit('acupoints-clicked', data)
+    },
+    acupointsResult: function (data) {
+      this.$emit('acupoints-result', data)
     },
     onConnectivityCollapseChange: function (data) {
       this.$emit('connectivity-collapse-change', data)
@@ -530,7 +534,7 @@ export default {
     // This should respect the information provided by the property
     tabEntries: function () {
       return this.tabs.filter((tab) =>
-        (tab.type === "acupoints" && 
+        (tab.type === "acupoints" &&
           (
             this.acupointsInfoList &&
             Object.keys(this.acupointsInfoList).length > 0
