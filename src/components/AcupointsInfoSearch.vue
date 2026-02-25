@@ -58,6 +58,7 @@
 
 <script>
 /* eslint-disable no-alert, no-console */
+import { markRaw } from 'vue';
 import {
   ElButton as Button,
   ElCard as Card,
@@ -127,8 +128,8 @@ export default {
           }
           filterOption.children.push(entry)
         })
-        this.filterOptions.push(filterOption)
-        this.filters.push({
+        this.filterOptions.unshift(filterOption)
+        this.filters.unshift({
           "facetPropPath": "acupoints.meridian",
           "facet": "Show all",
           "term": "Meridian"
@@ -165,6 +166,11 @@ export default {
               "facetPropPath": "acupoints.implied",
               "facet": "Show all",
               "term": "Implied"
+          },
+          {
+              "facetPropPath": "acupoints.userDefined",
+              "facet": "Show all",
+              "term": "user"
           }
       ],
       filterOptions: [
@@ -216,16 +222,33 @@ export default {
             },
           ],
         },
+        {
+          "key": "acupoints.userDefined",
+          "label": "User Defined",
+          "children": [
+            {
+                "key": "acupoints.userDefined.yes",
+                "label": "User data",
+                "value": "userDefined>Yes"
+            },
+            {
+              "key": "acupoints.userDefined.no",
+              "label": "Official data",
+              "value": "userDefined>No"
+            },
+          ],
+        },
       ],
-      currentFilters: {
+      currentFilters: markRaw({
         curated: "Both",
         mri: "Both",
         who: "Both",
+        userDefined: "Both",
         meridian: {
           showAll: true,
           list: []
         },
-      },
+      }),
       results: [],
       paginatedResults: [],
       searchInput: "",
@@ -236,17 +259,6 @@ export default {
     }
   },
   watch: {
-    currentFilters: {
-      handler: function () {
-      //  this.search(
-      //    this.searchInput,
-      //    this.numberPerPage,
-      //    this.page
-      //  )
-      },
-      immediate: true,
-      deep: true,
-    },
     entry: {
       handler: function () {
         this.filterUpdate(this.filters)
@@ -291,6 +303,15 @@ export default {
             this.currentFilters['who'] = 'Both'
           }
         }
+        if (filter.facetPropPath === "acupoints.userDefined") {
+          if (filter.facet === "User data") {
+            this.currentFilters['userDefined'] = 'Yes'
+          } else if (filter.facet === 'Official data') {
+            this.currentFilters['userDefined'] = 'No'
+          } else {
+            this.currentFilters['userDefined'] = 'Both'
+          }
+        }
         if (filter.facetPropPath === "acupoints.meridian") {
           if (filter.facet === "Show all") {
             this.currentFilters['meridian']['showAll'] = true
@@ -333,14 +354,19 @@ export default {
           item => (item.Curated ? true : false) === curated)
       }
       if (this.currentFilters['mri'] !== "Both") {
-        const curated = this.currentFilters['mri'] === "On" ? true : false
+        const mri = this.currentFilters['mri'] === "On" ? true : false
         filteredList = filteredList.filter(
-          item => (item.onMRI ? true : false) === curated)
+          item => (item.onMRI ? true : false) === mri)
       }
       if (this.currentFilters['who'] !== "Both") {
         const who = this.currentFilters['who'] === "Yes" ? true : false
         filteredList = filteredList.filter(
           item => (item["Meridian Point"] ? true : false) === who)
+      }
+      if (this.currentFilters['userDefined'] !== "Both") {
+        const user = this.currentFilters['userDefined'] === "Yes" ? true : false
+        filteredList = filteredList.filter(
+          item => (item["userDefined"] ? true : false) === user)
       }
       if (!this.currentFilters['meridian']['showAll']) {
         filteredList = filteredList.filter((item) => {
@@ -380,12 +406,24 @@ export default {
           }
         }
       }
+      this.results.sort((a, b) => {
+        if (a["Meridian Point"] == b["Meridian Point"]) {
+          return 0
+        } else if (a["Meridian Point"]) {
+          return -1
+        } else {
+          return 1
+        }
+      })
+
       const start = this.numberPerPage * (this.page - 1)
       this.paginatedResults = this.results.slice(start, start + this.numberPerPage)
       this.numberOfHits = this.results.length
       this.searchInput = input
       this.lastSearch = input
-      this.$emit("acupoints-result", this.results);
+      this.$emit("acupoints-result", {
+        list: this.results
+      });
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val
