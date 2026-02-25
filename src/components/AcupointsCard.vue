@@ -10,6 +10,21 @@
         <div class="card-right">
           <el-collapse class="collapse-card" v-model="expanded" @change="expandedChanged">
             <el-collapse-item :title="entry.Acupoint" name="1" class="collapse-card">
+              <template #title>
+                <div>
+                  <span class="title">{{ entry.Acupoint }}</span>
+                  <el-tag
+                    v-for="tag in tags"
+                    :key="tag.name"
+                    :type="tag.type"
+                    effect="plain"
+                    class="acupointTags"
+                    size="small"
+                  >
+                    {{ tag.name }}
+                  </el-tag>
+                </div>
+              </template>
               <template v-for="field in displayFields" :key="field['name']">
                 <div class="details" >
                   <strong>{{ field['name'] }}: </strong>
@@ -48,12 +63,23 @@
 
 <script>
 import EventBus from './EventBus.js'
+import {
+  ElCollapse as Collapse,
+  ElCollapseItem as CollapseItem,
+  ElTag as Tag
+} from 'element-plus'
 /* eslint-disable no-alert, no-console */
 
 export default {
+  components: {
+    Collapse,
+    CollapseItem,
+    Tag
+  },
   data() {
     return {
       expanded: [],
+      tags: [],
       displayFields: [
         {name: "Synonym", isEditing: false},
         {name: "Chinese Name", isEditing: false},
@@ -84,6 +110,20 @@ export default {
       default: false,
     },
   },
+  created: function () {
+    if (this.entry["Meridian Point"]) {
+      this.tags.push({ name: 'WHO', type: 'success' })
+    }
+    if (this.entry.Meridian) {
+      this.tags.push({ name: this.entry.Meridian, type: 'info' })
+    }
+    if (!this.entry.onMRI) {
+      this.tags.push({ name: 'Implied', type: 'info' })
+    }
+    if (this.entry.userDefined) {
+      this.tags.push({ name: 'User Defined', type: 'warning' })
+    }
+  },
   methods: {
     expandedChanged: function() {
       if (this.expanded.length > 0) {
@@ -104,7 +144,7 @@ export default {
         field['isEditing'] = true;
       }
     }
-  }
+  },
 }
 </script>
 
@@ -218,6 +258,17 @@ export default {
 
 .loading-icon :deep(.el-loading-spinner .path) {
   stroke: $app-primary-color;
+}
+
+.title {
+  font: inherit;
+  margin-top:4px;
+  padding-right:30px;
+  vertical-align:middle;
+}
+
+.acupointTags {
+  margin-right:4px;
 }
 
 .float-button-container {
