@@ -153,9 +153,9 @@ export default {
       filters: [
           {
               "facetPropPath": "acupoints.WHO",
-              "facet": "WHO",
+              "facet": "Show all",
               "term": "WHO",
-              "tagLabel": "WHO"
+
           },
           {
               "facetPropPath": "acupoints.visualized",
@@ -170,7 +170,7 @@ export default {
           {
               "facetPropPath": "acupoints.userDefined",
               "facet": "Show all",
-              "term": "user"
+              "term": "User defined"
           }
       ],
       filterOptions: [
