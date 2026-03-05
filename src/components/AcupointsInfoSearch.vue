@@ -201,7 +201,7 @@ export default {
             },
             {
               "key": "acupoints.implied.no",
-              "label": "Non Implied",
+              "label": "Not implied",
               "value": "Implied>No"
             },
           ],
@@ -288,7 +288,7 @@ export default {
         if (filter.facetPropPath === "acupoints.implied") {
           if (filter.facet === "Implied") {
             this.currentFilters['mri'] = 'Off'
-          } else if (filter.facet === 'Non Implied') {
+          } else if (filter.facet === 'Not implied') {
             this.currentFilters['mri'] = 'On'
           } else {
             this.currentFilters['mri'] = 'Both'
@@ -355,8 +355,7 @@ export default {
       }
       if (this.currentFilters['mri'] !== "Both") {
         const mri = this.currentFilters['mri'] === "On" ? true : false
-        filteredList = filteredList.filter(
-          item => (item.onMRI ? true : false) === mri)
+        filteredList = filteredList.filter(item => (item.onMRI ? true : false) === mri)
       }
       if (this.currentFilters['who'] !== "Both") {
         const who = this.currentFilters['who'] === "Yes" ? true : false
