@@ -420,6 +420,7 @@ export default {
     openSearch: function (filters, searchTerm = '') {
       this.searchInput = searchTerm
       this.filterUpdate(filters)
+      this.$refs.filtersRef.setCascader(this.filters)
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val
