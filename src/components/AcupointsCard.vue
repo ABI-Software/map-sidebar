@@ -112,13 +112,13 @@ export default {
   },
   created: function () {
     if (this.entry["Meridian Point"]) {
-      this.tags.push({ name: 'WHO', type: 'success' })
+      this.tags.push({ name: 'WHO', type: 'info' })
     }
     if (this.entry.Meridian) {
       this.tags.push({ name: this.entry.Meridian, type: 'info' })
     }
-    if (!this.entry.onMRI) {
-      this.tags.push({ name: 'Implied', type: 'info' })
+    if (this.entry.onMRI) {
+      this.tags.push({ name: 'Spotted', type: 'success' })
     }
     if (this.entry.userDefined) {
       this.tags.push({ name: 'User Defined', type: 'warning' })
