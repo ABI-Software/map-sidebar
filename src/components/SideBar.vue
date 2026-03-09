@@ -299,6 +299,15 @@ export default {
     toggleDrawer: function () {
       this.drawerOpen = !this.drawerOpen
     },
+    openAcupointsSearch: function (facets, query) {
+      this.drawerOpen = true
+      // Because refs are in v-for, nextTick is needed here
+      this.$nextTick(() => {
+        console.log("broken")
+        const acupointTabRef = this.getTabRef(undefined, 'acupoints', true);
+        acupointTabRef.openSearch(facets, query)
+      })
+    },
     openConnectivitySearch: function (facets, query) {
       this.drawerOpen = true;
       // Because refs are in v-for, nextTick is needed here
@@ -429,14 +438,6 @@ export default {
      */
     updateConnectivityError: function (errorInfo) {
       EventBus.emit('connectivity-error', errorInfo);
-    },
-    openAcupointsSearch: function (term) {
-      this.drawerOpen = true
-      // Because refs are in v-for, nextTick is needed here
-      this.$nextTick(() => {
-        const tabRef = this.getTabRef(undefined, 'acupoints', true);
-        tabRef.search(term);
-      })
     },
     /**
      * Store available anatomy facets data for connectivity list component

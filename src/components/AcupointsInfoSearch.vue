@@ -163,9 +163,9 @@ export default {
               "term": "Visualized"
           },
           {
-              "facetPropPath": "acupoints.implied",
+              "facetPropPath": "acupoints.onMRI",
               "facet": "Show all",
-              "term": "Implied"
+              "term": "onMRI"
           },
           {
               "facetPropPath": "acupoints.userDefined",
@@ -191,18 +191,18 @@ export default {
           ],
         },
         {
-          "key": "acupoints.implied",
-          "label": "Implied",
+          "key": "acupoints.onMRI",
+          "label": "Spotted On MRI",
           "children": [
             {
-                "key": "acupoints.implied.yes",
-                "label": "Implied",
-                "value": "Implied>Yes"
+                "key": "acupoints.onMRI.yes",
+                "label": "Spotted",
+                "value": "onMRI>Yes"
             },
             {
-              "key": "acupoints.implied.no",
-              "label": "Not implied",
-              "value": "Implied>No"
+              "key": "acupoints.onMRI.no",
+              "label": "Not spotted",
+              "value": "onMRI>No"
             },
           ],
         },
@@ -285,11 +285,11 @@ export default {
             this.currentFilters['curated'] = 'Both'
           }
         }
-        if (filter.facetPropPath === "acupoints.implied") {
-          if (filter.facet === "Implied") {
-            this.currentFilters['mri'] = 'Off'
-          } else if (filter.facet === 'Not implied') {
+        if (filter.facetPropPath === "acupoints.onMRI") {
+          if (filter.facet === "Spotted") {
             this.currentFilters['mri'] = 'On'
+          } else if (filter.facet === 'Not spotted') {
+            this.currentFilters['mri'] = 'Off'
           } else {
             this.currentFilters['mri'] = 'Both'
           }
@@ -323,13 +323,6 @@ export default {
       });
 
       this.search( this.searchInput)
-
-      //this.search();
-      // this.$emit("search-changed", {
-      //   value: filters,
-      //   tabType: "connectivity",
-      //   type: "filter-update",
-      // });
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val;
@@ -423,6 +416,10 @@ export default {
       this.$emit("acupoints-result", {
         list: this.results
       });
+    },
+    openSearch: function (filters, searchTerm = '') {
+      this.searchInput = searchTerm
+      this.filterUpdate(filters)
     },
     numberPerPageUpdate: function (val) {
       this.numberPerPage = val
