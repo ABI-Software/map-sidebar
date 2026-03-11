@@ -105,10 +105,10 @@
             trigger="hover"
             popper-class="filter-help-popover"
           >
-            <template #reference>
+            <template v-if="entry.helper" #reference>
               <MapSvgIcon icon="help" class="help" />
             </template>
-            <div>
+            <div v-if="entry.helper">
               <strong>Within categories:</strong> OR
               <br />
               example: {{ entry.helper.within }}
@@ -362,7 +362,7 @@ export default {
       })
 
       // trigger reactivity only once
-      Object.assign(this.options, processedOptions);
+      Object.assign(this.options, processedOptions)
     },
     populateCascader: function () {
       if (this.entry.options) {
@@ -542,6 +542,13 @@ export default {
         })
         return count
       }
+      const found = facet.children.find((item) => {
+        return item.label === "Show all"
+      })
+      if (found) {
+        return facet.children.length - 1
+      }
+
       return facet.children.length
     },
     /**
