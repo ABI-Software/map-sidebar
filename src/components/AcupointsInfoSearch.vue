@@ -400,7 +400,7 @@ export default {
       }
       this.results.sort((a, b) => {
         if (a["Meridian Point"] == b["Meridian Point"]) {
-          return 0
+          return a['Acupoint'].localeCompare(b['Acupoint'], undefined, { numeric: true })
         } else if (a["Meridian Point"]) {
           return -1
         } else {
