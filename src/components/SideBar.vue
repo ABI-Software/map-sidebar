@@ -563,6 +563,9 @@ export default {
     EventBus.on('connectivity-source-change', (payLoad) => {
       this.$emit('connectivity-source-change', payLoad);
     })
+    EventBus.on('show-connectivity-graph', (payLoad) => {
+      this.$emit('show-connectivity-graph', payLoad);
+    })
 
     // Get available anatomy facets for the connectivity info
     EventBus.on('available-facets', (payLoad) => {

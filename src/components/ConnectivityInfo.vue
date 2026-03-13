@@ -191,6 +191,12 @@
 
     <div class="content-container content-container-connectivity" v-show="activeView === 'graphView'">
       <template v-if="graphViewLoaded">
+        <el-button
+          class="button"
+          @click="openGraphInViewer"
+        >
+          Open in viewer
+        </el-button>
         <connectivity-graph
           v-loading="connectivityLoading"
           :key="`${connectivityKey}graph`"
@@ -415,6 +421,22 @@ export default {
         'category': val,
         'location': 'map_sidebar_connectivity',
       });
+    },
+    openGraphInViewer: function () {
+      // Open graph view in viewer
+      const payload = {
+        entry: this.entry.featureId[0],
+        mapServer: this.flatmapApi,
+        sckanVersion: this.sckanVersion,
+        connectivityFromMap: this.connectivityFromMap,
+        connectivityError: this.connectivityError,
+        allWithDatasets: [
+          ...this.componentsWithDatasets,
+          ...this.destinationsWithDatasets,
+          ...this.originsWithDatasets,
+        ],
+      };
+      EventBus.emit('show-connectivity-graph', payload);
     },
     onTapNode: function (data) {
       // save selected state for list view
