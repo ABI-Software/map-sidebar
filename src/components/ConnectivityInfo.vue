@@ -4,8 +4,8 @@
     <div class="connectivity-info-title">
       <div class="title-content">
         <div class="block" v-if="entry.title">
-          <div class="title">
-            <span>{{ capitalise(entry.title) }}</span>
+          <div class="title" :title="displayTitle">
+            <span>{{ capitalise(displayTitle) }}</span>
             <template v-if="entry.featuresAlert">
               <el-popover
                 width="250"
@@ -70,7 +70,7 @@
       </div>
     </div>
 
-    <div class="content-container population-display">
+    <div class="content-container population-display" :class="{'flex-row': hasSingleConnectivityList}">
       <div class="block attribute-title-container">
         <span class="attribute-title">Population Display</span>
         <el-popover
@@ -87,10 +87,25 @@
             This list is ordered alphabetically,
             switch to graph view for path details.
           </span>
+          <div v-if="hasSingleConnectivityList" class="connectivity-legends">
+            <div class="legend-title">Legend</div>
+            <span class="legend-item">
+              <span class="legend-color differ"></span>
+              SCKAN feature maps differently on Map
+            </span>
+            <span class="legend-item">
+              <span class="legend-color unavailable"></span>
+              SCKAN feature unavailable on Map
+            </span>
+            <span class="legend-item">
+              <span class="legend-color mapped"></span>
+              SCKAN feature available on Map
+            </span>
+          </div>
         </el-popover>
       </div>
       <div class="block buttons-row">
-        <div class="population-display-source">
+        <div class="population-display-source" v-if="!hasSingleConnectivityList">
           <span>
             Connectivity from:
             <el-popover
@@ -114,7 +129,7 @@
             <el-radio value="sckan">SCKAN</el-radio>
           </el-radio-group>
         </div>
-        <div class="population-display-view">
+        <div class="population-display-view" :class="{'align-right': hasSingleConnectivityList}">
           <el-button
             :class="activeView === 'listView' ? 'button' : 'el-button-secondary'"
             @click="switchConnectivityView('listView')"
@@ -171,22 +186,46 @@
     </div>
 
     <div class="content-container content-container-connectivity" v-show="activeView === 'listView'">
-      <connectivity-list
-        v-loading="connectivityLoading"
-        :key="`${connectivityKey}list`"
-        :entry="entry"
-        :origins="origins"
-        :components="components"
-        :destinations="destinations"
-        :originsWithDatasets="originsWithDatasets"
-        :componentsWithDatasets="componentsWithDatasets"
-        :destinationsWithDatasets="destinationsWithDatasets"
-        :availableAnatomyFacets="availableAnatomyFacets"
-        :connectivityError="connectivityError"
-        @connectivity-hovered="onConnectivityHovered"
-        @connectivity-clicked="onConnectivityClicked"
-        @connectivity-action-click="onConnectivityActionClick"
-      />
+      <!-- TODO: To use only one component when the data is ready -->
+      <temmplate v-if="hasSingleConnectivityList">
+        <connectivity-reconciliation-list
+          v-loading="connectivityLoading"
+          :key="`${connectivityKey}list`"
+          :entry="entry"
+          :origins="origins"
+          :components="components"
+          :destinations="destinations"
+          :originsWithDatasets="originsWithDatasets"
+          :componentsWithDatasets="componentsWithDatasets"
+          :destinationsWithDatasets="destinationsWithDatasets"
+          :destinationsCombinations="destinationsCombinations"
+          :originsCombinations="originsCombinations"
+          :componentsCombinations="componentsCombinations"
+          :availableAnatomyFacets="availableAnatomyFacets"
+          :connectivityError="connectivityError"
+          @connectivity-hovered="onConnectivityHovered"
+          @connectivity-clicked="onConnectivityClicked"
+          @connectivity-action-click="onConnectivityActionClick"
+        />
+      </temmplate>
+      <template v-else>
+        <connectivity-list
+          v-loading="connectivityLoading"
+          :key="`${connectivityKey}list`"
+          :entry="entry"
+          :origins="origins"
+          :components="components"
+          :destinations="destinations"
+          :originsWithDatasets="originsWithDatasets"
+          :componentsWithDatasets="componentsWithDatasets"
+          :destinationsWithDatasets="destinationsWithDatasets"
+          :availableAnatomyFacets="availableAnatomyFacets"
+          :connectivityError="connectivityError"
+          @connectivity-hovered="onConnectivityHovered"
+          @connectivity-clicked="onConnectivityClicked"
+          @connectivity-action-click="onConnectivityActionClick"
+        />
+      </template>
     </div>
 
     <div class="content-container content-container-connectivity" v-show="activeView === 'graphView'">
@@ -233,6 +272,7 @@ import {
   CopyToClipboard,
   ConnectivityGraph,
   ConnectivityList,
+  ConnectivityReconciliationList,
   ExternalResourceCard,
 } from '@abi-software/map-utilities';
 import '@abi-software/map-utilities/dist/style.css';
@@ -261,11 +301,16 @@ export default {
     CopyToClipboard,
     ConnectivityGraph,
     ConnectivityList,
+    ConnectivityReconciliationList,
   },
   props: {
     connectivityEntry: {
       type: Array,
       default: [],
+    },
+    entryData: {
+      type: Object,
+      default: () => ({}),
     },
     entryId: {
       type: String,
@@ -280,6 +325,10 @@ export default {
       default: () => [],
     },
     withCloseButton: {
+      type: Boolean,
+      default: false,
+    },
+    showLongLabel: {
       type: Boolean,
       default: false,
     },
@@ -301,6 +350,12 @@ export default {
       return this.connectivityEntry.find((entry) => {
         return entry.featureId[0] === this.entryId;
       });
+    },
+    displayTitle: function () {
+      if (this.showLongLabel) {
+        return this.entryData?.['long-label'] || this.entry?.['long-label'] || '';
+      }
+      return this.entry?.title || '';
     },
     hasProvenanceTaxonomyLabel: function () {
       return (
@@ -337,6 +392,18 @@ export default {
     },
     destinationsWithDatasets: function () {
       return this.entry.destinationsWithDatasets;
+    },
+    hasSingleConnectivityList: function () {
+      return this.entry.hasSingleConnectivityList;
+    },
+    destinationsCombinations: function () {
+      return this.entry.destinationsCombinations || [];
+    },
+    originsCombinations: function () {
+      return this.entry.originsCombinations || [];
+    },
+    componentsCombinations: function () {
+      return this.entry.componentsCombinations || [];
     },
     resources: function () {
       return this.entry.hyperlinks || [];
@@ -704,8 +771,13 @@ export default {
   line-height: 1.3em !important;
   font-size: 18px;
   font-weight: bold;
-  padding-bottom: 8px;
+  margin-bottom: 8px;
   color: $app-primary-color;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .block + .block {
@@ -883,15 +955,22 @@ export default {
   justify-content: space-between;
   border-bottom: 1px solid $app-primary-color;
   padding-bottom: 0.5rem !important;
-
   flex-direction: column !important;
   align-items: start;
+
+  &.flex-row {
+    flex-direction: row !important;
+    align-items: center;
+  }
 
   .buttons-row {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+  }
+
+  &:not(.flex-row) .buttons-row {
     width: 100%;
   }
 }
@@ -922,6 +1001,64 @@ export default {
 .population-display-view {
   .el-button + .el-button {
     margin-left: 0.5rem !important;
+  }
+
+  &.align-right {
+    margin-left: auto;
+  }
+}
+
+.connectivity-legends {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+
+  .legend-title {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--el-text-color-primary);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    font-size: 12px;
+    line-height: 1.2;
+    color: var(--el-text-color-regular);
+  }
+
+  .legend-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    flex: 0 0 12px;
+    border-left: 2px solid;
+
+    &.mapped {
+      background-color: #d9ffe0;
+      border-left-color: #7fe09c;
+    }
+
+    &.unavailable {
+      background-color: #ffe5e3;
+      border-left-color: #ffb7b4;
+    }
+
+    &.differ {
+      background: linear-gradient(
+        90deg,
+        #ffe5e3 0%,
+        #ffe5e3 calc(50% - 1px),
+        #7fe09c calc(50% - 1px),
+        #7fe09c calc(50% + 1px),
+        #d9ffe0 calc(50% + 1px),
+        #d9ffe0 100%
+      );
+      border-left-color: #ffb7b4;
+    }
   }
 }
 

@@ -52,6 +52,7 @@
                 :envVars="envVars"
                 :connectivityEntry="connectivityEntry"
                 :availableAnatomyFacets="availableAnatomyFacets"
+                :showLongLabel="showLongLabel"
                 @filter-visibility="$emit('filter-visibility', $event)"
                 :connectivityFilterOptions="filterOptions"
                 :showVisibilityFilter="showVisibilityFilter"
@@ -178,7 +179,11 @@ export default {
     showVisibilityFilter: {
       type: Boolean,
       default: false,
-    }
+    },
+    showLongLabel: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: function () {
     return {

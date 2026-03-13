@@ -3,10 +3,12 @@
     <div class="connectivity-card" ref="card">
       <div class="seperator-path"></div>
       <div v-loading="loading" class="card-content" @click="cardClicked(entry)">
-        <div class="card-title">{{ capitalise(entry.label) }}</div>
+        <div class="card-title" :title="displayTitle">
+          {{ capitalise(displayTitle) }}
+        </div>
         <template v-for="field in displayFields" :key="field">
           <div class="card-details" v-if="entry[field]">
-            <strong>{{ field }}:</strong>
+            <strong>{{ field }}: </strong>
             <div v-if="field === 'nerve-label'" class="card-tags">
               <div v-for="nerve in entry[field]" :key="nerve.nerve">
                 <el-tag type="primary" size="small">
@@ -48,8 +50,18 @@ export default {
       type: Array,
       default: () => [],
     },
+    showLongLabel: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
+    displayTitle: function () {
+      if (this.showLongLabel) {
+        return this.entry?.['long-label'] || '';
+      }
+      return this.entry?.label || '';
+    },
     loading: function () {
       // for clicking on the flatmap neuron
       if ("ready" in this.entry) {
@@ -99,10 +111,15 @@ export default {
 }
 
 .card-title {
-  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
   font-weight: bold;
   line-height: 1.5;
   letter-spacing: 1.05px;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .card-details {
