@@ -155,7 +155,6 @@ export default {
               "facetPropPath": "acupoints.WHO",
               "facet": "Show all",
               "term": "WHO",
-
           },
           {
               "facetPropPath": "acupoints.visualized",
@@ -192,16 +191,16 @@ export default {
         },
         {
           "key": "acupoints.onMRI",
-          "label": "Spotted On MRI",
+          "label": "Markers",
           "children": [
             {
                 "key": "acupoints.onMRI.yes",
-                "label": "Spotted",
+                "label": "Marked",
                 "value": "onMRI>Yes"
             },
             {
               "key": "acupoints.onMRI.no",
-              "label": "Not spotted",
+              "label": "Not marked",
               "value": "onMRI>No"
             },
           ],
@@ -286,9 +285,9 @@ export default {
           }
         }
         if (filter.facetPropPath === "acupoints.onMRI") {
-          if (filter.facet === "Spotted") {
+          if (filter.facet === "Marked") {
             this.currentFilters['mri'] = 'On'
-          } else if (filter.facet === 'Not spotted') {
+          } else if (filter.facet === 'Unmarked') {
             this.currentFilters['mri'] = 'Off'
           } else {
             this.currentFilters['mri'] = 'Both'
