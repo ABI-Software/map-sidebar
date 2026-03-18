@@ -200,7 +200,7 @@ export default {
             },
             {
               "key": "acupoints.onMRI.no",
-              "label": "Not marked",
+              "label": "Unmarked",
               "value": "onMRI>No"
             },
           ],
