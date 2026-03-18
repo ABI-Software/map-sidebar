@@ -134,15 +134,18 @@
           class="connectivity-card"
           :entry="result"
           :connectivityEntry="connectivityEntry"
+          :showLongLabel="showLongLabel"
           @open-connectivity="onConnectivityCollapseChange"
         />
         <ConnectivityInfo
           v-if="expanded === result.id"
           class="connectivity-info"
+          :entryData="result"
           :entryId="result.id"
           :connectivityEntry="connectivityEntry"
           :availableAnatomyFacets="availableAnatomyFacets"
           :envVars="envVars"
+          :showLongLabel="showLongLabel"
           :withCloseButton="true"
           @show-connectivity="onShowConnectivity"
           @show-reference-connectivities="onShowReferenceConnectivities"
@@ -241,7 +244,11 @@ export default {
     showVisibilityFilter: {
       type: Boolean,
       default: false,
-    }
+    },
+    showLongLabel: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: function () {
     return {
