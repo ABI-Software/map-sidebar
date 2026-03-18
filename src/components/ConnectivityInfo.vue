@@ -267,6 +267,9 @@
           :sckanVersion="sckanVersion"
           :connectivityFromMap="connectivityFromMap"
           :connectivityError="connectivityError"
+          :destinationsCombinations="destinationsCombinations"
+          :originsCombinations="originsCombinations"
+          :componentsCombinations="componentsCombinations"
           @tap-node="onTapNode"
         />
       </template>
@@ -566,6 +569,9 @@ export default {
         sckanVersion: this.sckanVersion,
         connectivityFromMap: this.connectivityFromMap,
         connectivityError: this.connectivityError,
+        originsCombinations: this.originsCombinations,
+        componentsCombinations: this.componentsCombinations,
+        destinationsCombinations: this.destinationsCombinations,
         allWithDatasets: [
           ...this.componentsWithDatasets,
           ...this.destinationsWithDatasets,
