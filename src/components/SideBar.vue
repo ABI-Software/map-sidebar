@@ -606,6 +606,9 @@ export default {
     EventBus.on('connectivity-source-change', (payLoad) => {
       this.$emit('connectivity-source-change', payLoad);
     })
+    EventBus.on('show-connectivity-graph', (payLoad) => {
+      this.$emit('show-connectivity-graph', payLoad);
+    })
 
     // Emit acupoints clicked event
     EventBus.on('acupoints-clicked', (payLoad) => {
