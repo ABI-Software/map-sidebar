@@ -130,7 +130,7 @@ export default {
         { title: 'Dataset Explorer', id: 1, type: 'datasetExplorer', closable: false },
         { title: 'Connectivity Explorer', id: 2, type: 'connectivityExplorer', closable: false },
         { title: 'Annotation', id: 3, type: 'annotation', closable: true },
-        { title: 'Cell Cards', id: 4, type: 'cellCards', closable: false },
+        { title: 'Cell Cards Explorer', id: 4, type: 'cellCards', closable: false },
       ],
     },
     /**
