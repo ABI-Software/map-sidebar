@@ -4,7 +4,7 @@
       class="tab"
       v-for="tab in tabs"
       :key="tab.id"
-      :class="{ 'active-tab': tab.id == activeId }"
+      :class="{ 'active-tab': tab.id == activeId, 'closable-tab': tab.closable }"
       @click="tabClicked(tab)"
     >
       <span class="tab-title">{{ tab.title }} </span>
@@ -103,14 +103,23 @@ export default {
 .tab-title {
   text-align: center;
   font-size: 14px;
-  padding: 0 1rem;
+  padding: 0 0.75rem;
+
+  .closable-tab & {
+    padding-right: 0.25rem;
+  }
 }
 
 .tab-close-icon {
-  width: 20px !important;
-  height: 20px !important;
-  font-size: 20px !important;
-  padding-right: 4px !important;
+  width: 18px !important;
+  height: 18px !important;
+  font-size: 18px !important;
+  margin-right: 4px !important;
   color: $app-primary-color !important;
+  border-radius: 2px;
+
+  &:hover {
+    background-color: rgba($app-primary-color, 0.15) !important;
+  }
 }
 </style>
