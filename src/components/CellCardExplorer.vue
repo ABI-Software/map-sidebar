@@ -22,7 +22,15 @@
           {{ cellType.preferredLabel }}
         </div>
         <div class="card-details">
-          <span>{{ cellType.species }}</span>
+          <div class="card-keywords">
+            <span>{{ cellType.species }}</span>
+            <span
+              v-for="somaLocation in cellType.somaLocations"
+              class="card-chip"
+              :key="somaLocation">
+              {{ somaLocation }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -148,6 +156,7 @@ export default {
 .card {
   padding: 16px;
   position: relative;
+  font-family: Asap;
 
   + .card::before {
     content: '';
@@ -175,5 +184,22 @@ export default {
 
 .card-details {
   font-size: 14px;
+}
+
+.card-keywords {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  span {
+    color: #606266;
+  }
+}
+
+.card-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #f0f0f0;
+  border-radius: 12px;
 }
 </style>
