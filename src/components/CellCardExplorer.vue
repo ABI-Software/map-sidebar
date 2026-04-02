@@ -18,10 +18,10 @@
         :key="index"
         class="card"
       >
-        <div class="card-title">
-          {{ cellType.preferredLabel }}
-        </div>
-        <div class="card-details">
+        <div class="card-header">
+          <div class="card-title">
+            {{ cellType.preferredLabel }}
+          </div>
           <div class="card-keywords">
             <span>{{ cellType.species }}</span>
             <span
@@ -30,6 +30,26 @@
               :key="somaLocation">
               {{ somaLocation }}
             </span>
+          </div>
+        </div>
+        <div class="card-details">
+          <div v-if="cellType.geneExpressionString" class="card-section">
+            <label>Marker Genes</label>
+            <p v-html="transformString(cellType.geneExpressionString)"></p>
+          </div>
+          <div v-if="cellType.fiberTypeString" class="card-section">
+            <label>Axon Phenotype</label>
+            <p>{{ cellType.fiberTypeString }}</p>
+          </div>
+          <div v-if="cellType.physiologyString" class="card-section">
+            <label>Physiology</label>
+            <p>{{ cellType.physiologyString }}</p>
+          </div>
+          <div v-if="cellType.relatedCells?.length" class="card-section">
+            <label>Related Variants</label>
+            <ul v-for="relatedCell in cellType.relatedCells" :key="relatedCell">
+              <li>{{ relatedCell.label }}</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -95,6 +115,11 @@ export default {
         }
       }
     },
+    transformString: function(str) {
+      if (!str) return '';
+      // replace the string with ^ with <sup> and the next word with </sup>
+      return str.replace(/\^(\w+)/g, '<sup>$1</sup>');
+    },
   },
 }
 </script>
@@ -154,9 +179,9 @@ export default {
 }
 
 .card {
-  padding: 16px;
   position: relative;
   font-family: Asap;
+  font-size: 14px;
 
   + .card::before {
     content: '';
@@ -169,9 +194,13 @@ export default {
   }
 }
 
+.card-header,
+.card-details {
+  padding: 1rem;
+}
+
 .card-title {
   margin-bottom: 0.75rem;
-  font-size: 14px;
   font-weight: bold;
   line-height: 1.5;
   letter-spacing: 1.05px;
@@ -183,7 +212,9 @@ export default {
 }
 
 .card-details {
-  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .card-keywords {
@@ -201,5 +232,27 @@ export default {
   padding: 2px 8px;
   background-color: #f0f0f0;
   border-radius: 12px;
+}
+
+.card-section {
+  label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  p {
+    margin: 0;
+    color: #606266;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1rem;
+
+    li {
+      color: #606266;
+    }
+  }
 }
 </style>
