@@ -24,15 +24,44 @@
           </div>
           <div class="card-keywords">
             <span>{{ cellType.species }}</span>
-            <span
-              v-for="somaLocation in cellType.somaLocations"
-              class="card-chip"
-              :key="somaLocation">
-              {{ somaLocation }}
-            </span>
+            <div class="card-chips">
+              <span
+                v-for="somaLocation in cellType.somaLocations"
+                class="card-chip"
+                :key="somaLocation">
+                {{ somaLocation }}
+              </span>
+            </div>
           </div>
         </div>
         <div class="card-details">
+          <div v-if="cellType.entity" class="card-section">
+            <label>Entity</label>
+            <p>{{ cellType.entity }}</p>
+          </div>
+          <div v-if="cellType.species" class="card-section">
+            <label>Species</label>
+            <p>{{ cellType.species }}</p>
+          </div>
+          <div v-if="cellType.somaLocations?.length" class="card-section">
+            <label>Soma Location</label>
+            <div class="card-chips">
+              <span
+                v-for="somaLocation in cellType.somaLocations"
+                class="card-chip"
+                :key="somaLocation">
+                {{ somaLocation }}
+              </span>
+            </div>
+          </div>
+          <div v-if="cellType.circuitRole" class="card-section">
+            <label>Circuit Role</label>
+            <p>{{ cellType.circuitRole }}</p>
+          </div>
+          <div v-if="cellType.creLine" class="card-section">
+            <label>Cre Line</label>
+            <p>{{ cellType.creLine }}</p>
+          </div>
           <div v-if="cellType.geneExpressionString" class="card-section">
             <label>Marker Genes</label>
             <p v-html="transformString(cellType.geneExpressionString)"></p>
@@ -46,10 +75,18 @@
             <p>{{ cellType.physiologyString }}</p>
           </div>
           <div v-if="cellType.relatedCells?.length" class="card-section">
-            <label>Related Variants</label>
+            <label>Related Species Variants</label>
             <ul v-for="relatedCell in cellType.relatedCells" :key="relatedCell">
               <li>{{ relatedCell.label }}</li>
             </ul>
+          </div>
+          <div v-if="cellType.sourceNomenclature" class="card-section">
+            <label>Source Publication</label>
+            <p>
+              <a :href="cellType.sourceNomenclature" target="_blank" rel="noopener noreferrer">
+                {{ cellType.sourceNomenclatureLabel }}
+              </a>
+            </p>
           </div>
         </div>
       </div>
@@ -217,7 +254,8 @@ export default {
   gap: 0.75rem;
 }
 
-.card-keywords {
+.card-keywords,
+.card-chips {
   display: flex;
   align-items: center;
   gap: 0.5rem;
