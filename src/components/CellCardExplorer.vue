@@ -14,11 +14,15 @@
     -->
     <div class="content scrollbar" v-loading="loadingCards" refs="content">
       <div
-        v-for="(cellType, index) in cellTypes"
-        :key="index"
+        v-for="cellType in cellTypes"
+        :key="cellType.id"
         class="card"
+        :class="{'active':  activeCardId === cellType.id}"
       >
-        <div class="card-header">
+        <div
+          class="card-header"
+          @click="activateCard(cellType.id)"
+        >
           <div class="card-title">
             {{ cellType.preferredLabel }}
           </div>
@@ -35,58 +39,60 @@
           </div>
         </div>
         <div class="card-details">
-          <div v-if="cellType.entity" class="card-section">
-            <label>Entity</label>
-            <p>{{ cellType.entity }}</p>
-          </div>
-          <div v-if="cellType.species" class="card-section">
-            <label>Species</label>
-            <p>{{ cellType.species }}</p>
-          </div>
-          <div v-if="cellType.somaLocations?.length" class="card-section">
-            <label>Soma Location</label>
-            <div class="card-chips">
-              <span
-                v-for="somaLocation in cellType.somaLocations"
-                class="card-chip"
-                :key="somaLocation">
-                {{ somaLocation }}
-              </span>
+          <div class="card-details-inner">
+            <div v-if="cellType.entity" class="card-section">
+              <label>Entity</label>
+              <p>{{ cellType.entity }}</p>
             </div>
-          </div>
-          <div v-if="cellType.circuitRole" class="card-section">
-            <label>Circuit Role</label>
-            <p>{{ cellType.circuitRole }}</p>
-          </div>
-          <div v-if="cellType.creLine" class="card-section">
-            <label>Cre Line</label>
-            <p>{{ cellType.creLine }}</p>
-          </div>
-          <div v-if="cellType.geneExpressionString" class="card-section">
-            <label>Marker Genes</label>
-            <p v-html="transformString(cellType.geneExpressionString)"></p>
-          </div>
-          <div v-if="cellType.fiberTypeString" class="card-section">
-            <label>Axon Phenotype</label>
-            <p>{{ cellType.fiberTypeString }}</p>
-          </div>
-          <div v-if="cellType.physiologyString" class="card-section">
-            <label>Physiology</label>
-            <p>{{ cellType.physiologyString }}</p>
-          </div>
-          <div v-if="cellType.relatedCells?.length" class="card-section">
-            <label>Related Species Variants</label>
-            <ul v-for="relatedCell in cellType.relatedCells" :key="relatedCell">
-              <li>{{ relatedCell.label }}</li>
-            </ul>
-          </div>
-          <div v-if="cellType.sourceNomenclature" class="card-section">
-            <label>Source Publication</label>
-            <p>
-              <a :href="cellType.sourceNomenclature" target="_blank" rel="noopener noreferrer">
-                {{ cellType.sourceNomenclatureLabel }}
-              </a>
-            </p>
+            <div v-if="cellType.species" class="card-section">
+              <label>Species</label>
+              <p>{{ cellType.species }}</p>
+            </div>
+            <div v-if="cellType.somaLocations?.length" class="card-section">
+              <label>Soma Location</label>
+              <div class="card-chips">
+                <span
+                  v-for="somaLocation in cellType.somaLocations"
+                  class="card-chip"
+                  :key="somaLocation">
+                  {{ somaLocation }}
+                </span>
+              </div>
+            </div>
+            <div v-if="cellType.circuitRole" class="card-section">
+              <label>Circuit Role</label>
+              <p>{{ cellType.circuitRole }}</p>
+            </div>
+            <div v-if="cellType.creLine" class="card-section">
+              <label>Cre Line</label>
+              <p>{{ cellType.creLine }}</p>
+            </div>
+            <div v-if="cellType.geneExpressionString" class="card-section">
+              <label>Marker Genes</label>
+              <p v-html="transformString(cellType.geneExpressionString)"></p>
+            </div>
+            <div v-if="cellType.fiberTypeString" class="card-section">
+              <label>Axon Phenotype</label>
+              <p>{{ cellType.fiberTypeString }}</p>
+            </div>
+            <div v-if="cellType.physiologyString" class="card-section">
+              <label>Physiology</label>
+              <p>{{ cellType.physiologyString }}</p>
+            </div>
+            <div v-if="cellType.relatedCells?.length" class="card-section">
+              <label>Related Species Variants</label>
+              <ul v-for="relatedCell in cellType.relatedCells" :key="relatedCell">
+                <li>{{ relatedCell.label }}</li>
+              </ul>
+            </div>
+            <div v-if="cellType.sourceNomenclature" class="card-section">
+              <label>Source Publication</label>
+              <p>
+                <a :href="cellType.sourceNomenclature" target="_blank" rel="noopener noreferrer">
+                  {{ cellType.sourceNomenclatureLabel }}
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -104,6 +110,7 @@ import SearchFilters from './SearchFilters.vue'
 import SearchHistory from './SearchHistory.vue'
 import DatasetCard from './DatasetCard.vue'
 import EventBus from './EventBus.js'
+import { generateUUID } from '../utils/common.js';
 
 export default {
   components: {
@@ -126,6 +133,7 @@ export default {
       genes: [],
       sources: {},
       loadingCards: false,
+      activeCardId: null,
     };
   },
   computed: {},
@@ -143,7 +151,12 @@ export default {
           }
           const data = await response.json();
           if (data.DEFAULT_CELL_TYPES) {
-            this.cellTypes = data.DEFAULT_CELL_TYPES;
+            this.cellTypes = data.DEFAULT_CELL_TYPES.map((cellType) => {
+              return {
+                ...cellType,
+                id: generateUUID(),
+              }
+            });
           }
         } catch (error) {
           console.error('Error fetching cell types:', error);
@@ -151,6 +164,9 @@ export default {
           this.loadingCards = false;
         }
       }
+    },
+    activateCard: function(cardId) {
+      this.activeCardId = this.activeCardId === cardId ? null : cardId;
     },
     transformString: function(str) {
       if (!str) return '';
@@ -229,10 +245,24 @@ export default {
     height: 1px;
     background-color: #e4e7ed;
   }
+
+  .card-details {
+    display: none;
+  }
+
+  &.active {
+    .card-details {
+      display: block;
+    }
+  }
+}
+
+.card-header {
+  cursor: pointer;
 }
 
 .card-header,
-.card-details {
+.card-details-inner {
   padding: 1rem;
 }
 
@@ -248,7 +278,7 @@ export default {
   overflow: hidden;
 }
 
-.card-details {
+.card-details-inner {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
