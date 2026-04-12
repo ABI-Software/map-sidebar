@@ -7,19 +7,39 @@
       class="card-header"
       @click="$emit('toggle')"
     >
-      <div class="card-title">
-        {{ cellType.preferredLabel }}
-      </div>
-      <div class="card-keywords">
-        <span>{{ cellType.species }}</span>
-        <div class="card-chips">
-          <span
-            v-for="somaLocation in cellType.somaLocations"
-            class="card-chip"
-            :key="somaLocation">
-            {{ somaLocation }}
-          </span>
+      <div class="title-content">
+        <div class="card-title">
+          {{ cellType.preferredLabel }}
         </div>
+        <div class="card-keywords">
+          <span>{{ cellType.species }}</span>
+          <div class="card-chips">
+            <span
+              v-for="somaLocation in cellType.somaLocations"
+              class="card-chip"
+              :key="somaLocation">
+              {{ somaLocation }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="title-buttons">
+        <CopyToClipboard @copied="onCopied" :content="updatedCopyContent" />
+        <el-popover
+          width="auto"
+          trigger="hover"
+          :teleported="false"
+          popper-class="popover-map-pin"
+        >
+          <template #reference>
+            <el-button class="button-circle" circle @click="closeCard">
+              <el-icon color="white">
+                <el-icon-close />
+              </el-icon>
+            </el-button>
+          </template>
+          <span>Close</span>
+        </el-popover>
       </div>
     </div>
     <div class="card-details">
@@ -83,8 +103,22 @@
 </template>
 
 <script>
+import {
+  ElButton as Button,
+  ElIcon as Icon,
+} from 'element-plus'
+import {
+  CopyToClipboard,
+} from '@abi-software/map-utilities';
+import '@abi-software/map-utilities/dist/style.css';
+
 export default {
   name: 'CellCard',
+  components: {
+    Button,
+    Icon,
+    CopyToClipboard,
+  },
   props: {
     cellType: {
       type: Object,
@@ -102,6 +136,39 @@ export default {
       // replace the string with ^ with <sup> and the next word with </sup>
       return str.replace(/\^(\w+)/g, '<sup>$1</sup>');
     },
+  },
+  updatedCopyContent: function() {
+    const {
+      preferredLabel,
+      species,
+      somaLocations,
+      circuitRole,
+      creLine,
+      geneExpressionString,
+      fiberTypeString,
+      physiologyString,
+      relatedCells,
+      sourceNomenclatureLabel } = this.cellType;
+    let content = `Cell Type: ${preferredLabel}\n`;
+    if (species) content += `Species: ${species}\n`;
+    if (somaLocations?.length) content += `Soma Locations: ${somaLocations.join(', ')}\n`;
+    if (circuitRole) content += `Circuit Role: ${circuitRole}\n`;
+    if (creLine) content += `Cre Line: ${creLine}\n`;
+    if (geneExpressionString) content += `Marker Genes: ${geneExpressionString.replace(/\^(\w+)/g, '$1')}\n`;
+    if (fiberTypeString) content += `Axon Phenotype: ${fiberTypeString}\n`;
+    if (physiologyString) content += `Physiology: ${physiologyString}\n`;
+    if (relatedCells?.length) content += `Related Species Variants: ${relatedCells.map(cell => cell.label).join(', ')}\n`;
+    if (sourceNomenclatureLabel) content += `Source Publication: ${sourceNomenclatureLabel}\n`;
+    return content;
+  },
+  onCopied: function() {
+    this.$message({
+      message: 'Cell type details copied to clipboard',
+      type: 'success',
+    });
+  },
+  closeCard: function() {
+    this.$emit('toggle');
   },
 }
 </script>
@@ -124,6 +191,7 @@ export default {
     z-index: 1;
   }
 
+  &.active::before,
   &:hover::before {
     border-color: $app-primary-color;
   }
@@ -148,6 +216,8 @@ export default {
   }
 
   &.active {
+    background-color: #f7faff;
+
     .card-details {
       display: block;
     }
@@ -156,6 +226,9 @@ export default {
 
 .card-header {
   cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .card-header,
@@ -224,6 +297,67 @@ export default {
     li {
       color: #606266;
     }
+  }
+}
+
+:deep(.el-popper.popover-map-pin) {
+  padding: 4px 10px;
+  min-width: max-content;
+  font-family: Asap;
+  font-size: 12px;
+  line-height: inherit;
+  color: inherit;
+  background: #f3ecf6 !important;
+  border: 1px solid $app-primary-color;
+
+  & .el-popper__arrow::before {
+    border: 1px solid;
+    border-color: $app-primary-color;
+    background: #f3ecf6;
+  }
+}
+
+.title-buttons {
+  display: flex;
+  flex: 1 0 0%;
+  max-width: 20%;
+  flex-direction: row;
+  justify-content: end;
+  gap: 0.5rem;
+
+  :deep(.copy-clipboard-button) {
+    &,
+    &:hover,
+    &:focus {
+      border-color: $app-primary-color !important;
+      border-radius: 50%;
+    }
+    &.is-disabled {
+      border-color: #dab3ec !important;
+    }
+  }
+
+  .el-button + .el-button {
+    margin-left: 0 !important;
+  }
+}
+
+.button-circle {
+  margin: 0;
+  width: 24px !important;
+  height: 24px !important;
+  border: 1px solid $app-primary-color !important;
+
+  &,
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $app-primary-color;
+    border-color: $app-primary-color !important;
+  }
+
+  &.secondary {
+    background-color: white !important;
   }
 }
 </style>
