@@ -111,16 +111,36 @@ export default {
   position: relative;
   font-family: Asap;
   font-size: 14px;
-  max-height: 215px; // Same as other cards in the sidebar
 
-  &:not(:first-child)::before {
+  &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 10px;
-    width: 455px; // Same as other cards in the sidebar
-    height: 2px; // Same as other cards in the sidebar
-    background-color: #e4e7ed;
+    top: 5px;
+    left: 5px;
+    width: calc(100% - 15px);
+    height: calc(100% - 10px);
+    border: 3px solid transparent;
+    border-radius: 5px;
+    z-index: 1;
+  }
+
+  &:hover::before {
+    border-color: $app-primary-color;
+  }
+
+  &:not(:first-child) {
+    margin-top: 5px;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0px;
+      left: 10px;
+      width: 455px; // Same as other cards in the sidebar
+      height: 2px; // Same as other cards in the sidebar
+      background-color: #e4e7ed;
+      z-index: 0;
+    }
   }
 
   .card-details {
@@ -136,6 +156,12 @@ export default {
 
 .card-header {
   cursor: pointer;
+}
+
+.card-header,
+.card-details {
+  position: relative;
+  z-index: 2;
 }
 
 .card-header,
