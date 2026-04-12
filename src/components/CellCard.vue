@@ -218,6 +218,12 @@ export default {
   &.active {
     background-color: #f7faff;
 
+    .card-header {
+      .card-chips {
+        display: none;
+      }
+    }
+
     .card-details {
       display: block;
     }
@@ -318,12 +324,16 @@ export default {
 }
 
 .title-buttons {
-  display: flex;
   flex: 1 0 0%;
   max-width: 20%;
   flex-direction: row;
   justify-content: end;
   gap: 0.5rem;
+  display: none;
+
+  .card.active & {
+    display: flex;
+  }
 
   :deep(.copy-clipboard-button) {
     &,
