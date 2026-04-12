@@ -111,14 +111,15 @@ export default {
   position: relative;
   font-family: Asap;
   font-size: 14px;
+  max-height: 215px; // Same as other cards in the sidebar
 
   &:not(:first-child)::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 1px;
+    left: 10px;
+    width: 455px; // Same as other cards in the sidebar
+    height: 2px; // Same as other cards in the sidebar
     background-color: #e4e7ed;
   }
 
