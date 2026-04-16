@@ -237,7 +237,7 @@ export default {
               mimetype = thumbnail.mimetype.name
             }
             let action = {
-              label: capitalise(this.label),
+              label: baseName(filePath),
               resource: flatmap.associated_flatmap.identifier,
               title: 'View Flatmap',
               type: 'Flatmap',
@@ -323,7 +323,7 @@ export default {
           }
 
           let action = {
-            label: capitalise(this.label),
+            label: baseName(filePath),
             resource: resource,
             s3uri: this.entry.s3uri,
             title: 'View plot',
@@ -367,7 +367,7 @@ export default {
             mimetype = thumbnail.mimetype.name
           }
           let action = {
-            label: capitalise(this.label),
+            label: baseName(filePath),
             resource: `${this.envVars.API_LOCATION}s3-resource/${this.getS3Prefix()}files/${filePath}${this.getS3Args()}`,
             title: "View 3D scaffold",
             type: "Scaffold",
@@ -436,7 +436,7 @@ export default {
             }
             const resource = `${this.envVars.API_LOCATION}s3-resource/${this.getS3Prefix()}files/${filePath}${this.getS3Args()}`
             let action = {
-              label: capitalise(this.label),
+              label: baseName(filePath),
               resource: resource,
               s3uri: this.entry.s3uri,
               title: 'View simulation',
