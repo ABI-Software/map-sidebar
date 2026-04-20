@@ -6,13 +6,23 @@
         <span class="header-title">Cell Card Explorer</span>
       </div>
     </template>
+
+    <SearchFilters
+      class="filters"
+      ref="filtersRef"
+      :entry="filterEntry"
+      :envVars="envVars"
+      @filterResults="filterUpdate"
+      @numberPerPage="numberPerPageUpdate"
+      @loading="filtersLoading"
+      @cascaderReady="cascaderReady"
+    ></SearchFilters>
+
     <!--
-    <SearchFilters>
-    </SearchFilters>
     <SearchHistory>
     </SearchHistory>
     -->
-    <div class="content scrollbar" v-loading="loadingCards" refs="content">
+    <div class="content scrollbar" v-loading="loadingCards" ref="content">
       <CellCard
         v-for="cellType in cellTypes"
         :key="cellType.id"
@@ -32,7 +42,6 @@ import {
 import 'element-plus/es/components/message/style/css';
 import SearchFilters from './SearchFilters.vue'
 import SearchHistory from './SearchHistory.vue'
-import DatasetCard from './DatasetCard.vue'
 import EventBus from './EventBus.js'
 import CellCard from './CellCard.vue'
 import { generateUUID } from '../utils/common.js';
@@ -41,7 +50,6 @@ export default {
   components: {
     SearchFilters,
     SearchHistory,
-    DatasetCard,
     Card,
     CellCard,
   },
@@ -54,15 +62,36 @@ export default {
   },
   data: function () {
     return {
+      bodyStyle: {
+        flex: '1 1 auto',
+        'flex-flow': 'column',
+        display: 'flex',
+      },
+      allCellTypes: [],
       cellTypes: [],
-      families: [],
-      genes: [],
-      sources: {},
+      filterOptions: [],
+      activeFilters: [],
+      numberPerPage: 10,
+      totalFilteredCount: 0,
       loadingCards: false,
       activeCardId: null,
+      cascaderIsReady: false,
     };
   },
-  computed: {},
+  computed: {
+    filterEntry: function () {
+      return {
+        numberOfHits: this.totalFilteredCount,
+        filterFacets: this.activeFilters,
+        showFilters: true,
+        options: this.filterOptions,
+        helper: {
+          within: "'mouse' OR 'human'",
+          between: "'species' AND 'soma location'",
+        },
+      }
+    },
+  },
   mounted: function() {
     this.fetchCellTypes(this.envVars.CELL_CARDS_API);
   },
@@ -77,12 +106,15 @@ export default {
           }
           const data = await response.json();
           if (data.DEFAULT_CELL_TYPES) {
-            this.cellTypes = data.DEFAULT_CELL_TYPES.map((cellType) => {
+            const loadedCellTypes = data.DEFAULT_CELL_TYPES.map((cellType) => {
               return {
                 ...cellType,
                 id: generateUUID(),
               }
             });
+            this.allCellTypes = loadedCellTypes;
+            this.filterOptions = this.buildFilterOptions(loadedCellTypes);
+            this.applyFilters(this.activeFilters);
           }
         } catch (error) {
           console.error('Error fetching cell types:', error);
@@ -93,6 +125,116 @@ export default {
     },
     activateCard: function(cardId) {
       this.activeCardId = this.activeCardId === cardId ? null : cardId;
+    },
+    filterUpdate: function(filters) {
+      this.activeFilters = [...filters];
+      this.applyFilters(this.activeFilters);
+      this.loadingCards = false;
+    },
+    numberPerPageUpdate: function(value) {
+      this.numberPerPage = parseInt(value, 10) || 10;
+      this.applyFilters(this.activeFilters);
+    },
+    filtersLoading: function() {
+      // SearchFilters only emits loading:true and never emits false.
+      // CellCardExplorer filters synchronously, so loading is reset in filterUpdate.
+    },
+    cascaderReady: function() {
+      this.cascaderIsReady = true;
+    },
+    normalizeFacetValue: function(value) {
+      return String(value || '').trim().toLowerCase();
+    },
+    buildFacetChildren: function(cellTypes, key) {
+      const values = new Set();
+
+      cellTypes.forEach((cellType) => {
+        const fieldValue = cellType[key];
+        if (Array.isArray(fieldValue)) {
+          fieldValue.forEach((item) => {
+            const normalized = String(item || '').trim();
+            if (normalized) values.add(normalized);
+          });
+          return;
+        }
+
+        const normalized = String(fieldValue || '').trim();
+        if (normalized) values.add(normalized);
+      });
+
+      return [...values]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+        .map((value) => ({ label: value }));
+    },
+    buildFilterOptions: function(cellTypes) {
+      const options = [
+        {
+          key: 'species',
+          label: 'Species',
+          children: this.buildFacetChildren(cellTypes, 'species'),
+        },
+        {
+          key: 'somaLocations',
+          label: 'Soma Location',
+          children: this.buildFacetChildren(cellTypes, 'somaLocations'),
+        },
+        {
+          key: 'circuitRole',
+          label: 'Circuit Role',
+          children: this.buildFacetChildren(cellTypes, 'circuitRole'),
+        },
+        {
+          key: 'sourceNomenclatureLabel',
+          label: 'Source',
+          children: this.buildFacetChildren(cellTypes, 'sourceNomenclatureLabel'),
+        },
+      ];
+
+      return options.filter((option) => option.children.length > 0);
+    },
+    matchFieldFilter: function(cellType, filter) {
+      const filterFacet = this.normalizeFacetValue(filter.facet);
+      const filterTerm = this.normalizeFacetValue(filter.term);
+
+      if (!filterFacet || filterFacet === 'show all') {
+        return true;
+      }
+
+      if (filterTerm === 'species') {
+        return this.normalizeFacetValue(cellType.species) === filterFacet;
+      }
+
+      if (filterTerm === 'soma location') {
+        return (cellType.somaLocations || []).some((location) => {
+          return this.normalizeFacetValue(location) === filterFacet;
+        });
+      }
+
+      if (filterTerm === 'circuit role') {
+        return this.normalizeFacetValue(cellType.circuitRole) === filterFacet;
+      }
+
+      if (filterTerm === 'source') {
+        return this.normalizeFacetValue(cellType.sourceNomenclatureLabel) === filterFacet;
+      }
+
+      return true;
+    },
+    applyFilters: function(filters) {
+      const activeFilters = (filters || []).filter((filter) => {
+        return filter?.term && filter?.facet;
+      });
+
+      const filtered = this.allCellTypes.filter((cellType) => {
+        return activeFilters.every((filter) => this.matchFieldFilter(cellType, filter));
+      });
+
+      this.totalFilteredCount = filtered.length;
+      this.cellTypes = filtered.slice(0, this.numberPerPage);
+
+      if (!this.cellTypes.some((cellType) => cellType.id === this.activeCardId)) {
+        this.activeCardId = null;
+      }
     },
   },
 }
