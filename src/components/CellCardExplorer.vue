@@ -30,6 +30,16 @@
         :isActive="activeCardId === cellType.id"
         @toggle="activateCard(cellType.id)"
       />
+      <el-pagination
+        class="pagination"
+        v-model:current-page="page"
+        hide-on-single-page
+        large
+        layout="prev, pager, next"
+        :page-size="numberPerPage"
+        :total="totalFilteredCount"
+        @current-change="pageChange"
+      ></el-pagination>
     </div>
   </el-card>
 </template>
@@ -38,6 +48,7 @@
 /* eslint-disable no-alert, no-console */
 import {
   ElCard as Card,
+  ElPagination as Pagination,
 } from 'element-plus'
 import 'element-plus/es/components/message/style/css';
 import SearchFilters from './SearchFilters.vue'
@@ -52,6 +63,7 @@ export default {
     SearchHistory,
     Card,
     CellCard,
+    Pagination,
   },
   name: 'CellCardExplorer',
   props: {
@@ -72,6 +84,8 @@ export default {
       filterOptions: [],
       activeFilters: [],
       numberPerPage: 10,
+      page: 1,
+      start: 0,
       totalFilteredCount: 0,
       loadingCards: false,
       activeCardId: null,
@@ -128,12 +142,25 @@ export default {
     },
     filterUpdate: function(filters) {
       this.activeFilters = [...filters];
+      this.page = 1;
+      this.start = 0;
       this.applyFilters(this.activeFilters);
       this.loadingCards = false;
     },
     numberPerPageUpdate: function(value) {
       this.numberPerPage = parseInt(value, 10) || 10;
+      this.pageChange(1);
+    },
+    pageChange: function(page) {
+      this.page = page;
+      this.start = (page - 1) * this.numberPerPage;
       this.applyFilters(this.activeFilters);
+      this.scrollToTop();
+    },
+    scrollToTop: function() {
+      if (this.$refs.content) {
+        this.$refs.content.scroll({ top: 0, behavior: 'smooth' });
+      }
     },
     filtersLoading: function() {
       // SearchFilters only emits loading:true and never emits false.
@@ -230,7 +257,7 @@ export default {
       });
 
       this.totalFilteredCount = filtered.length;
-      this.cellTypes = filtered.slice(0, this.numberPerPage);
+      this.cellTypes = filtered.slice(this.start, this.start + this.numberPerPage);
 
       if (!this.cellTypes.some((cellType) => cellType.id === this.activeCardId)) {
         this.activeCardId = null;
