@@ -245,15 +245,28 @@ export default {
         return this.normalizeFacetValue(cellType.sourceNomenclatureLabel) === filterFacet;
       }
 
-      return true;
+      return false;
     },
     applyFilters: function(filters) {
       const activeFilters = (filters || []).filter((filter) => {
-        return filter?.term && filter?.facet;
+        return filter?.term && filter?.facet && this.normalizeFacetValue(filter.facet) !== 'show all';
       });
 
+      const filtersByTerm = activeFilters.reduce((grouped, filter) => {
+        const termKey = this.normalizeFacetValue(filter.term);
+        if (!grouped[termKey]) {
+          grouped[termKey] = [];
+        }
+        grouped[termKey].push(filter);
+        return grouped;
+      }, {});
+
+      const filterGroups = Object.values(filtersByTerm);
+
       const filtered = this.allCellTypes.filter((cellType) => {
-        return activeFilters.every((filter) => this.matchFieldFilter(cellType, filter));
+        return filterGroups.every((termGroup) => {
+          return termGroup.some((filter) => this.matchFieldFilter(cellType, filter));
+        });
       });
 
       this.totalFilteredCount = filtered.length;
