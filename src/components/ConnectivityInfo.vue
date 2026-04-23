@@ -41,7 +41,17 @@
               </el-icon>
             </button>
           </div>
-          <div class="subtitle"><strong>Id: </strong>{{ entry.featureId[0] }}</div>
+          <div class="subtitle">
+            <strong>Id: </strong>{{ entry.featureId[0] }}
+            <div v-if="entry.featuresAlert">
+              <button
+                class="alert-chip"
+                @click="showAlertMessage"
+              >
+                Notes
+              </button>
+            </div>
+          </div>
           <div v-if="hasProvenanceTaxonomyLabel" class="subtitle">
             {{ provSpeciesDescription }}
           </div>
@@ -291,7 +301,11 @@
       />
     </div>
 
-    <div class="content-container content-container-alert" v-if="entry.featuresAlert">
+    <div
+      ref="alertElement"
+      class="content-container content-container-alert"
+      v-if="entry.featuresAlert"
+    >
       <div class="block attribute-title-container">
         <span class="attribute-title">Alert</span>
       </div>
@@ -921,6 +935,19 @@ export default {
     },
     onTrackEvent: function (data) {
       EventBus.emit('trackEvent', data);
+    },
+    showAlertMessage: function () {
+      // scroll to alert message
+      this.$nextTick(() => {
+        const alertElement = this.$refs.alertElement;
+        if (alertElement) {
+          alertElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest',
+          });
+        }
+      });
     },
     formatAlertText: function (text) {
       if (!text) return '';
