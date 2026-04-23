@@ -290,6 +290,17 @@
         @trackEvent="onTrackEvent"
       />
     </div>
+
+    <div class="content-container content-container-alert" v-if="entry.featuresAlert">
+      <div class="block attribute-title-container">
+        <span class="attribute-title">Alert</span>
+      </div>
+      <div class="block">
+        <div class="alert-block" v-for="alert in entry.featuresAlert">
+          {{ alert }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1465,5 +1476,12 @@ export default {
   &:last-of-type {
     margin-bottom: 0.5em;
   }
+}
+
+.alert-block {
+  background-color: rgba(255, 229, 227, 0.5);
+  border: 1px dashed #ffb7b4;
+  padding: 0.75rem;
+  border-radius: 4px;
 }
 </style>
