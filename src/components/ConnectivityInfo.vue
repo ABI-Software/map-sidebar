@@ -938,15 +938,21 @@ export default {
         }
       );
 
-      const withBreaks = linkified
-        .replace(/\\n/g, '<br>')
-        .replace(/\n/g, '<br>');
+      const normalised = linkified
+        .replace(/\\n/g, '\n')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n');
 
-      // Bold section labels at the start and immediately after a line break.
-      return withBreaks.replace(
-        /(^|<br>\s*)([A-Za-z][^:<]{0,120}:)/g,
-        '$1<strong>$2</strong>'
-      );
+      return normalised
+        .split('\n')
+        .map((line) => {
+          const withBoldLabel = line.replace(
+            /^\s*([A-Za-z][^:<]{0,120}:)/,
+            '<strong>$1</strong>'
+          );
+          return `<div class="alert-line">${withBoldLabel}</div>`;
+        })
+        .join('');
     },
   },
   mounted: function () {
@@ -1506,6 +1512,10 @@ export default {
   border: 1px dashed var(--el-color-warning);
   padding: 0.75rem;
   border-radius: 4px;
+
+  :deep(.alert-line + .alert-line) {
+    margin-top: 0.5rem;
+  }
 
   :deep(a) {
     color: $app-primary-color;
