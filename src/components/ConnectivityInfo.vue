@@ -1506,8 +1506,8 @@ export default {
 }
 
 .alert-block {
-  background-color: rgba(255, 229, 227, 0.5);
-  border: 1px dashed #ffb7b4;
+  background-color: var(--el-color-warning-light-9);
+  border: 1px dashed var(--el-color-warning);
   padding: 0.75rem;
   border-radius: 4px;
 
