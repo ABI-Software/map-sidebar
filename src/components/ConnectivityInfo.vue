@@ -43,14 +43,16 @@
           </div>
           <div class="subtitle">
             <strong>Id: </strong>{{ entry.featureId[0] }}
-            <div v-if="entry.featuresAlert">
-              <button
-                class="alert-chip"
-                @click="showAlertMessage"
-              >
-                Notes
-              </button>
-            </div>
+            <el-button
+              round
+              size="small"
+              class="alert-chip"
+              @click="showAlertMessage"
+              v-if="entry.featuresAlert"
+            >
+              <el-icon class="alert"><el-icon-warn-triangle-filled /></el-icon>
+              Notes
+            </el-button>
           </div>
           <div v-if="hasProvenanceTaxonomyLabel" class="subtitle">
             {{ provSpeciesDescription }}
@@ -1159,15 +1161,6 @@ export default {
   text-transform: uppercase;
 }
 
-.main {
-  .el-button.is-round {
-    border-radius: 4px;
-    padding: 9px 20px 10px 20px;
-    display: flex;
-    height: 36px;
-  }
-}
-
 .button {
   margin-left: 0px !important;
   margin-top: 0px !important;
@@ -1551,6 +1544,30 @@ export default {
     &:hover {
       opacity: 0.8;
     }
+  }
+}
+
+.alert-chip {
+  margin-left: 5px;
+  background-color: $app-primary-color;
+  border-color: $app-primary-color;
+  color: #fff;
+
+  &:hover {
+    color: #fff !important;
+    background-color: #ac76c5 !important;
+    border: 1px solid #ac76c5 !important;
+  }
+
+  :deep(> span) {
+    gap: 2px;
+  }
+
+  .alert {
+    width: 1rem;
+    height: 1rem;
+    color: inherit;
+    margin: 0;
   }
 }
 </style>
