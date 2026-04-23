@@ -1457,10 +1457,6 @@ export default {
 
 .content-container-connectivity {
   position: relative;
-
-  &:not([style*="display: none"]) ~ .content-container-references {
-    margin-top: -1.25rem;
-  }
 }
 
 .attribute-content {
