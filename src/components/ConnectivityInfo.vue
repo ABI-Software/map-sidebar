@@ -296,9 +296,10 @@
         <span class="attribute-title">Alert</span>
       </div>
       <div class="block">
-        <div class="alert-block" v-for="alert in entry.featuresAlert">
-          {{ alert }}
-        </div>
+        <div class="alert-block"
+          v-for="alert in entry.featuresAlert"
+          v-html="formatAlertText(alert)"
+        ></div>
       </div>
     </div>
   </div>
@@ -921,6 +922,26 @@ export default {
     onTrackEvent: function (data) {
       EventBus.emit('trackEvent', data);
     },
+    formatAlertText: function (text) {
+      if (!text) return '';
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      const linkified = escaped.replace(
+        /(https?:\/\/[^\s"<>\[]+)/g,
+        (url) => {
+          const parts = url.match(/^(.*?)([\].,;:!?]*)$/);
+          const cleanUrl = parts ? parts[1] : url;
+          const suffix = parts ? parts[2] : '';
+          return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${suffix}`;
+        }
+      );
+
+      return linkified
+        .replace(/\\n/g, '<br>')
+        .replace(/\n/g, '<br>');
+    },
   },
   mounted: function () {
     this.updatedCopyContent = this.getUpdateCopyContent();
@@ -1483,5 +1504,14 @@ export default {
   border: 1px dashed #ffb7b4;
   padding: 0.75rem;
   border-radius: 4px;
+
+  :deep(a) {
+    color: $app-primary-color;
+    word-break: break-all;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
 }
 </style>
