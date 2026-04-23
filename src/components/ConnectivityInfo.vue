@@ -938,9 +938,15 @@ export default {
         }
       );
 
-      return linkified
+      const withBreaks = linkified
         .replace(/\\n/g, '<br>')
         .replace(/\n/g, '<br>');
+
+      // Bold section labels at the start and immediately after a line break.
+      return withBreaks.replace(
+        /(^|<br>\s*)([A-Za-z][^:<]{0,120}:)/g,
+        '$1<strong>$2</strong>'
+      );
     },
   },
   mounted: function () {
