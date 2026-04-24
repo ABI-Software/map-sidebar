@@ -12,21 +12,6 @@
               @click="toggleTitleExpansion"
             >
               <span>{{ capitalise(displayTitle) }}</span>
-              <template v-if="entry.featuresAlert">
-                <el-popover
-                  width="250"
-                  trigger="hover"
-                  :teleported="false"
-                  popper-class="popover-origin-help"
-                >
-                  <template #reference>
-                    <el-icon class="alert"><el-icon-warn-triangle-filled /></el-icon>
-                  </template>
-                  <span style="word-break: keep-all">
-                    {{ entry.featuresAlert }}
-                  </span>
-                </el-popover>
-              </template>
             </div>
             <button
               v-if="showTitleToggle"
