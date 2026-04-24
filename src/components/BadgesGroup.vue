@@ -73,6 +73,7 @@ export default {
       immediate: true,
       handler: function () {
         this.categories = {}
+        this.active = "All"
         if (this.displayDataset) {
           this.categories.All = { size: 1 }
           this.categories.Dataset = { size: 1 }
