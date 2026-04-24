@@ -812,6 +812,14 @@ export default {
         contentArray.push(contentString);
       }
 
+      // Alert
+      if (this.entry.featuresAlert) {
+        const alertContent = this.entry.featuresAlert
+          .map((alert) => this.formatAlertText(alert))
+          .join('\n');
+        contentArray.push(`<div><strong>Alert</strong></div>\n${alertContent}`);
+      }
+
       return contentArray.join('\n\n<br>');
     },
     getConnectivityDatasets: function (label) {
