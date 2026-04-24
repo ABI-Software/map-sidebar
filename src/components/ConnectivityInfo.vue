@@ -989,7 +989,7 @@ export default {
           );
           return `<div class="alert-line">${withBoldLabel}</div>`;
         })
-        .join('');
+        .join('\n');
     },
   },
   mounted: function () {
