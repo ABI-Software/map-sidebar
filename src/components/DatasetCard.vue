@@ -35,7 +35,7 @@
           </div>
           <div class="badges-container">
             <BadgesGroup
-              :entry="entry"
+              :items="items"
               @categoryChanged="categoryChanged"
             />
           </div>
@@ -187,12 +187,14 @@ export default {
       this.currentCategory = name
     },
     createSciCurnchItems: function () {
-      this.updateS3Bucket(this.entry.s3uri)
-      this.createDatasetItem()
-      this.createFlatmapItems()
-      this.createScaffoldItems()
-      this.createSimulationItems()
-      this.createPlotItems()
+      if (this.entry.detailsReady) {
+        this.updateS3Bucket(this.entry.s3uri)
+        this.createDatasetItem()
+        this.createFlatmapItems()
+        this.createScaffoldItems()
+        this.createSimulationItems()
+        this.createPlotItems()
+      }
       /* Disable these two
       this.createImageItems();
       this.createVideoItems();
@@ -369,10 +371,10 @@ export default {
             resource: `${this.envVars.API_LOCATION}s3-resource/${this.getS3Prefix()}files/${filePath}${this.getS3Args()}`,
             title: "View 3D scaffold",
             type: "Scaffold",
-            discoverId: this.discoverid,
+            discoverId: this.discoverId,
             apiLocation: this.envVars.API_LOCATION,
             version: this.version,
-            banner: this.datasetThumbnail,
+            banner: this.thumbnail,
             s3uri: this.entry.s3uri,
             contextCardUrl: this.getContextCardUrl(i),
           }
