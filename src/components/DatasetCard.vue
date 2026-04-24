@@ -260,7 +260,7 @@ export default {
         this.entry.images.forEach((image) => {
           const filePath = image.dataset.path
           const id = image.identifier
-          const linkUrl = `${this.envVars.ROOT_URL}/datasets/imageviewer?dataset_id=${this.discoverid}&dataset_version=${this.version}&file_path=${filePath}&mimetype=${image.mimetype.name}`
+          const linkUrl = `${this.envVars.ROOT_URL}/datasets/imageviewer?dataset_id=${this.discoverId}&dataset_version=${this.version}&file_path=${filePath}&mimetype=${image.mimetype.name}`
           this.items['Images'].push({
             id,
             title: baseName(filePath),
@@ -401,8 +401,8 @@ export default {
               type: 'Simulation',
               name: this.entry.name,
               description: this.entry.description,
-              discoverId: this.discoverid,
-              dataset: `${this.envVars.ROOT_URL}/datasets/${this.discoverid}?type=dataset`,
+              discoverId: this.discoverId,
+              dataset: `${this.envVars.ROOT_URL}/datasets/${this.discoverId}?type=dataset`,
             }
             this.items['Simulations'].push({
               id: 'simulation',
@@ -459,11 +459,11 @@ export default {
       if (this.entry.videos) {
         this.entry.videos.forEach((video) => {
           const filePath = this.getS3FilePath(
-            this.discoverid,
+            this.discoverId,
             this.version,
             video.dataset.path
           )
-          const linkUrl = `${this.envVars.ROOT_URL}/datasets/videoviewer?dataset_version=${this.version}&dataset_id=${this.discoverid}&file_path=${filePath}&mimetype=${video.mimetype.name}`
+          const linkUrl = `${this.envVars.ROOT_URL}/datasets/videoviewer?dataset_version=${this.version}&dataset_id=${this.discoverId}&file_path=${filePath}&mimetype=${video.mimetype.name}`
           this.items['Videos'].push({
             title: video.name,
             type: 'Video',
