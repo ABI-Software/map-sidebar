@@ -6,12 +6,7 @@
         <span class="card-left">
           <ImageGallery
             v-if="!loading && discoverId"
-            :datasetId="discoverId"
-            :datasetVersion="version"
-            :entry="entry"
-            :envVars="envVars"
-            :label="label"
-            :datasetThumbnail="thumbnail"
+            :items="items"
             :category="currentCategory"
             @card-clicked="galleryClicked"
             @datalink-clicked="galleryDatalinkClicked"
@@ -40,7 +35,7 @@
           </div>
           <div class="badges-container">
             <BadgesGroup
-              :entry="entry"
+              :items="items"
               @categoryChanged="categoryChanged"
             />
           </div>
@@ -57,6 +52,15 @@
 
 <script>
 /* eslint-disable no-alert, no-console */
+const baseName = (str) => {
+  return str.split('\\').pop().split('/').pop()
+}
+
+const capitalise = function (string) {
+  return string.replace(/\b\w/g, (v) => v.toUpperCase())
+}
+
+/* eslint-disable no-alert, no-console */
 import { View as ElIconView } from '@element-plus/icons-vue'
 import BadgesGroup from './BadgesGroup.vue'
 import {
@@ -68,7 +72,9 @@ import speciesMap from './species-map.js'
 import ImageGallery from './ImageGallery.vue'
 import MissingImage from '@/../assets/missing-image.svg'
 import { CopyToClipboard } from '@abi-software/map-utilities';
+import S3Bucket from '../mixins/S3Bucket.vue';
 import '@abi-software/map-utilities/dist/style.css';
+import GalleryHelper from '@abi-software/gallery/src/mixins/GalleryHelpers.js'
 
 export default {
   data() {
@@ -84,6 +90,7 @@ export default {
     Icon,
     CopyToClipboard,
   },
+  mixins: [GalleryHelper, S3Bucket],
   props: {
     /**
      * Object containing information for
@@ -103,6 +110,15 @@ export default {
       thumbnail: MissingImage,
       dataLocation: this.entry.doi,
       discoverId: undefined,
+      items: {
+        Dataset: [],
+        Flatmaps:[],
+        Images: [],
+        Scaffolds: [],
+        Simulations: [],
+        Videos: [],
+        Plots: [],
+      },
       loading: true,
       version: 1,
       lastDoi: undefined,
@@ -170,11 +186,317 @@ export default {
     categoryChanged: function (name) {
       this.currentCategory = name
     },
+    createSciCurnchItems: function () {
+      if (this.entry.detailsReady) {
+        this.updateS3Bucket(this.entry.s3uri)
+        this.createDatasetItem()
+        this.createFlatmapItems()
+        this.createScaffoldItems()
+        this.createSimulationItems()
+        this.createPlotItems()
+      }
+      /* Disable these two
+      this.createImageItems();
+      this.createVideoItems();
+      */
+    },
+    createDatasetItem: function () {
+      const link = `${this.envVars.ROOT_URL}/datasets/${this.discoverId}?type=dataset`
+      if (this.thumbnail) {
+        this.items['Dataset'].push({
+          id: -1,
+          //Work around gallery requires a truthy string
+          title: ' ',
+          type: `Dataset ${this.discoverId}`,
+          thumbnail: this.thumbnail,
+          link,
+          hideType: true,
+          hideTitle: true,
+        })
+      }
+    },
+    createFlatmapItems: function () {
+      if (this.entry.flatmaps) {
+        this.entry.flatmaps.forEach((flatmap) => {
+          if (flatmap.associated_flatmap?.identifier) {
+            const filePath = flatmap.dataset.path
+            const id = flatmap.identifier
+            const thumbnail = this.getThumbnailForPlot(
+              flatmap,
+              this.entry.thumbnails
+            )
+            let thumbnailURL = undefined
+            let mimetype = ''
+            if (thumbnail) {
+              thumbnailURL = this.getImageURL(this.envVars.API_LOCATION, {
+                id,
+                prefix: this.getS3Prefix(),
+                file_path: thumbnail.dataset.path,
+                s3Bucket: this.s3Bucket,
+              })
+              mimetype = thumbnail.mimetype.name
+            }
+            let action = {
+              label: baseName(filePath),
+              resource: flatmap.associated_flatmap.identifier,
+              title: 'View Flatmap',
+              type: 'Flatmap',
+              discoverId: this.discoverId,
+              version: this.version,
+            }
+            this.items['Flatmaps'].push({
+              id,
+              title: baseName(filePath),
+              type: 'Flatmap',
+              thumbnail: thumbnailURL,
+              userData: action,
+              hideType: true,
+              mimetype,
+            })
+          }
+        })
+      }
+    },
+    createImageItems: function () {
+      if (this.entry.images) {
+        this.entry.images.forEach((image) => {
+          const filePath = image.dataset.path
+          const id = image.identifier
+          const linkUrl = `${this.envVars.ROOT_URL}/datasets/imageviewer?dataset_id=${this.discoverId}&dataset_version=${this.version}&file_path=${filePath}&mimetype=${image.mimetype.name}`
+          this.items['Images'].push({
+            id,
+            title: baseName(filePath),
+            type: 'Image',
+            link: linkUrl,
+            hideType: true,
+          })
+        })
+      }
+    },
+    createPlotItems: function () {
+      if (this.entry.plots) {
+        this.entry.plots.forEach((plot) => {
+          const filePath = plot.dataset.path
+          const id = plot.identifier
+          const thumbnail = this.getThumbnailForPlot(
+            plot,
+            this.entry.thumbnails
+          )
+          let thumbnailURL = undefined
+          let mimetype = ''
+          if (thumbnail) {
+
+            thumbnailURL = this.getImageURL(this.envVars.API_LOCATION, {
+              id,
+              prefix: this.getS3Prefix(),
+              file_path: thumbnail.dataset.path,
+              s3Bucket: this.s3Bucket,
+            })
+            mimetype = thumbnail.mimetype.name
+          }
+          const plotAnnotation = plot.datacite;
+          const filePathPrefix = `${this.envVars.API_LOCATION}/s3-resource/${this.getS3Prefix()}files/`;
+          const sourceUrl = filePathPrefix + plot.dataset.path + this.getS3Args();
+
+          //plotAnnotation.supplemental_json_metadata.description can be undefined or
+          //contain an empty string causing an error with JSON.parse
+          let metadata = {}
+          try {
+            metadata = JSON.parse(
+              plotAnnotation.supplemental_json_metadata.description
+            )
+          } catch (error) {
+            console.warn(error)
+          }
+
+          let supplementalData = []
+          if (plotAnnotation.isDescribedBy) {
+            supplementalData.push({
+              url: filePathPrefix + plotAnnotation.isDescribedBy.path,
+            })
+          }
+
+          const resource = {
+            dataSource: { url: sourceUrl },
+            metadata,
+            supplementalData,
+          }
+
+          let action = {
+            label: baseName(filePath),
+            resource: resource,
+            s3uri: this.entry.s3uri,
+            title: 'View plot',
+            type: 'Plot',
+            discoverId: this.discoverId,
+            version: this.version,
+          }
+          this.items['Plots'].push({
+            id,
+            title: baseName(filePath),
+            type: 'Plot',
+            thumbnail: thumbnailURL,
+            userData: action,
+            hideType: true,
+            mimetype,
+          })
+        })
+      }
+    },
+    createScaffoldItems: function () {
+      if (this.entry.scaffolds) {
+        let index = 0
+        this.entry.scaffolds.forEach((scaffold, i) => {
+          const filePath = scaffold.dataset.path
+          const id = scaffold.identifier
+          const thumbnail = this.getThumbnailForScaffold(
+            scaffold,
+            this.entry.scaffoldViews,
+            this.entry.thumbnails,
+            index
+          )
+          let mimetype = ''
+          let thumbnailURL = undefined
+          if (thumbnail) {
+            thumbnailURL = this.getImageURL(this.envVars.API_LOCATION, {
+              id,
+              prefix: this.getS3Prefix(),
+              file_path: thumbnail.dataset.path,
+              s3Bucket: this.s3Bucket,
+            })
+            mimetype = thumbnail.mimetype.name
+          }
+          let action = {
+            label: baseName(filePath),
+            resource: `${this.envVars.API_LOCATION}s3-resource/${this.getS3Prefix()}files/${filePath}${this.getS3Args()}`,
+            title: "View 3D scaffold",
+            type: "Scaffold",
+            discoverId: this.discoverId,
+            apiLocation: this.envVars.API_LOCATION,
+            version: this.version,
+            banner: this.thumbnail,
+            s3uri: this.entry.s3uri,
+            contextCardUrl: this.getContextCardUrl(i),
+          }
+          this.items['Scaffolds'].push({
+            id,
+            title: baseName(filePath),
+            type: 'Scaffold',
+            thumbnail: thumbnailURL,
+            userData: action,
+            hideType: true,
+            mimetype,
+          })
+        })
+      }
+    },
+    createSimulationItems: function () {
+      if (this.entry.simulation) {
+        this.entry.simulation.forEach((simulation) => {
+          if (simulation.additional_mimetype.name === "application/x.vnd.abi.simulation+json") {
+            let action = {
+              label: undefined,
+              apiLocation: this.envVars.API_LOCATION,
+              s3uri: this.entry.s3uri,
+              version: this.version,
+              title: 'View simulation',
+              type: 'Simulation',
+              name: this.entry.name,
+              description: this.entry.description,
+              discoverId: this.discoverId,
+              dataset: `${this.envVars.ROOT_URL}/datasets/${this.discoverId}?type=dataset`,
+            }
+            this.items['Simulations'].push({
+              id: 'simulation',
+              title: ' ',
+              type: 'Simulation',
+              hideType: true,
+              hideTitle: true,
+              userData: action,
+            })
+          } else {
+            const filePath = simulation.dataset.path
+            const id = simulation.identifier
+            //Despite of the name, this method can be used to retreive
+            //the thumbnail information for any none scaffold type thumbnail
+            const thumbnail = this.getThumbnailForPlot(
+              simulation,
+              this.entry.thumbnails
+            )
+            let thumbnailURL = undefined
+            let mimetype = ''
+            if (thumbnail) {
+              thumbnailURL = this.getImageURL(this.envVars.API_LOCATION, {
+                id,
+                prefix: this.getS3Prefix(),
+                file_path: thumbnail.dataset.path,
+                s3Bucket: this.s3Bucket,
+              })
+              mimetype = thumbnail.mimetype.name
+            }
+            const resource = `${this.envVars.API_LOCATION}s3-resource/${this.getS3Prefix()}files/${filePath}${this.getS3Args()}`
+            let action = {
+              label: baseName(filePath),
+              resource: resource,
+              s3uri: this.entry.s3uri,
+              title: 'View simulation',
+              type: 'Simulation',
+              discoverId: this.discoverId,
+              version: this.version,
+            }
+            this.items['Simulations'].push({
+              id,
+              title: baseName(filePath),
+              type: 'Simulation',
+              thumbnail: thumbnailURL,
+              userData: action,
+              hideType: true,
+              mimetype,
+            })
+          }
+        })
+      }
+    },
+    createVideoItems: function () {
+      if (this.entry.videos) {
+        this.entry.videos.forEach((video) => {
+          const filePath = this.getS3FilePath(
+            this.discoverId,
+            this.version,
+            video.dataset.path
+          )
+          const linkUrl = `${this.envVars.ROOT_URL}/datasets/videoviewer?dataset_version=${this.version}&dataset_id=${this.discoverId}&file_path=${filePath}&mimetype=${video.mimetype.name}`
+          this.items['Videos'].push({
+            title: video.name,
+            type: 'Video',
+            thumbnail: this.defaultVideoImg,
+            hideType: true,
+            link: linkUrl,
+          })
+        })
+      }
+    },
     galleryClicked: function (payload) {
       this.propogateCardAction(payload)
     },
     galleryDatalinkClicked: function (payload) {
       EventBus.emit('datalink-clicked', payload); // Pass to mapintegratedvuer
+    },
+    getContextCardUrl: function(scaffoldIndex){
+      if(!this.entry.contextualInformation || this.entry.contextualInformation.length == 0){
+        return undefined
+      } else {
+        // The line below checks if there is a context file for each scaffold. If there is not, we use the first context card for each scaffold.
+        let contextIndex = this.entry['abi-contextual-information'].length == this.entry.scaffolds.length ? scaffoldIndex : 0
+        return `${this.envVars.API_LOCATION}s3-resource/${this.getS3Prefix()}files/${this.entry.contextualInformation[contextIndex]}${this.getS3Args()}`
+      }
+    },
+    getImageURL: function(apiEndpoint, info) {
+      let url = `${apiEndpoint}/s3-resource/${info.prefix}files/${info.file_path}?encodeBase64=true`
+      if (info.s3Bucket) {
+        url = url + `&s3BucketName=${info.s3Bucket}`
+      }
+      return url
     },
     openDataset: function () {
       window.open(this.dataLocation, '_blank')
@@ -241,6 +563,9 @@ export default {
             this.thumbnail = MissingImage
             this.discoverId = Number(this.entry.datasetId)
             this.loading = false
+          })
+          .finally(() => {
+            this.createSciCurnchItems()
           })
       }
     },
