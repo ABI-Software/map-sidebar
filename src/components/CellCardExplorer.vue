@@ -1,9 +1,33 @@
 <template>
   <el-card :body-style="bodyStyle" class="content-card">
     <template #header>
-      <!-- Placeholder -->
       <div class="header">
-        <span class="header-title">Cell Card Explorer</span>
+        <div class="search-input-container" :class="{'is-focus': searchInput}">
+          <el-input
+            class="search-input"
+            placeholder="Search"
+            v-model="searchInput"
+            @keyup="searchEvent"
+            clearable
+            @clear="clearSearchClicked"
+          ></el-input>
+        </div>
+        <el-button
+          type="primary"
+          class="button"
+          @click="searchEvent"
+          size="large"
+        >
+          Search
+        </el-button>
+        <el-button
+          link
+          class="el-button-link"
+          @click="onResetClick"
+          size="large"
+        >
+          Reset
+        </el-button>
       </div>
     </template>
 
@@ -83,6 +107,7 @@ export default {
       cellTypes: [],
       filterOptions: [],
       activeFilters: [],
+      searchInput: '',
       numberPerPage: 10,
       page: 1,
       start: 0,
@@ -139,6 +164,17 @@ export default {
     },
     activateCard: function(cardId) {
       this.activeCardId = this.activeCardId === cardId ? null : cardId;
+    },
+    clearSearchClicked: function() {
+      this.searchInput = '';
+    },
+    searchEvent: function(event = false) {
+      if (event.keyCode === 13 || event instanceof MouseEvent) {
+        this.searchInput = this.searchInput.trim();
+      }
+    },
+    onResetClick: function() {
+      this.searchInput = '';
     },
     filterUpdate: function(filters) {
       this.activeFilters = [...filters];
@@ -334,5 +370,18 @@ export default {
   background-color: #979797;
 }
 
+.el-button-link {
+  color: white !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-color: transparent !important;
+  background-color: transparent !important;
+  padding: 2px !important;
+  height: auto !important;
 
+  &:hover {
+    text-decoration-color: transparent;
+    box-shadow: none !important;
+  }
+}
 </style>
