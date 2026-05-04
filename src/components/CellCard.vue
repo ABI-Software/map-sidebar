@@ -5,7 +5,7 @@
   >
     <div
       class="card-header"
-      @click="$emit('toggle')"
+      @click="openCard"
     >
       <div class="title-content">
         <div class="card-title">
@@ -23,7 +23,7 @@
           </div>
         </div>
       </div>
-      <div class="title-buttons">
+      <div class="title-buttons" @click.stop>
         <CopyToClipboard @copied="onCopied" :content="updatedCopyContent" />
         <el-popover
           width="auto"
@@ -111,6 +111,7 @@ import {
   CopyToClipboard,
 } from '@abi-software/map-utilities';
 import '@abi-software/map-utilities/dist/style.css';
+import EventBus from './EventBus.js'
 
 export default {
   name: 'CellCard',
@@ -129,47 +130,53 @@ export default {
       default: false,
     },
   },
-  emits: ['toggle'],
+  emits: ['open', 'close'],
+  computed: {
+    updatedCopyContent: function() {
+      const {
+        preferredLabel,
+        species,
+        somaLocations,
+        circuitRole,
+        creLine,
+        geneExpressionString,
+        fiberTypeString,
+        physiologyString,
+        relatedCells,
+        sourceNomenclatureLabel } = this.cellType;
+      let content = `Cell Type: ${preferredLabel}\n`;
+      if (species) content += `Species: ${species}\n`;
+      if (somaLocations?.length) content += `Soma Locations: ${somaLocations.join(', ')}\n`;
+      if (circuitRole) content += `Circuit Role: ${circuitRole}\n`;
+      if (creLine) content += `Cre Line: ${creLine}\n`;
+      if (geneExpressionString) content += `Marker Genes: ${geneExpressionString.replace(/\^(\w+)/g, '$1')}\n`;
+      if (fiberTypeString) content += `Axon Phenotype: ${fiberTypeString}\n`;
+      if (physiologyString) content += `Physiology: ${physiologyString}\n`;
+      if (relatedCells?.length) content += `Related Species Variants: ${relatedCells.map(cell => cell.label).join(', ')}\n`;
+      if (sourceNomenclatureLabel) content += `Source Publication: ${sourceNomenclatureLabel}\n`;
+      return content;
+    },
+  },
   methods: {
     transformString: function(str) {
       if (!str) return '';
       // replace the string with ^ with <sup> and the next word with </sup>
       return str.replace(/\^(\w+)/g, '<sup>$1</sup>');
     },
-  },
-  updatedCopyContent: function() {
-    const {
-      preferredLabel,
-      species,
-      somaLocations,
-      circuitRole,
-      creLine,
-      geneExpressionString,
-      fiberTypeString,
-      physiologyString,
-      relatedCells,
-      sourceNomenclatureLabel } = this.cellType;
-    let content = `Cell Type: ${preferredLabel}\n`;
-    if (species) content += `Species: ${species}\n`;
-    if (somaLocations?.length) content += `Soma Locations: ${somaLocations.join(', ')}\n`;
-    if (circuitRole) content += `Circuit Role: ${circuitRole}\n`;
-    if (creLine) content += `Cre Line: ${creLine}\n`;
-    if (geneExpressionString) content += `Marker Genes: ${geneExpressionString.replace(/\^(\w+)/g, '$1')}\n`;
-    if (fiberTypeString) content += `Axon Phenotype: ${fiberTypeString}\n`;
-    if (physiologyString) content += `Physiology: ${physiologyString}\n`;
-    if (relatedCells?.length) content += `Related Species Variants: ${relatedCells.map(cell => cell.label).join(', ')}\n`;
-    if (sourceNomenclatureLabel) content += `Source Publication: ${sourceNomenclatureLabel}\n`;
-    return content;
-  },
-  onCopied: function() {
-    this.$message({
-      message: 'Cell type details copied to clipboard',
-      type: 'success',
-    });
-  },
-  closeCard: function() {
-    this.$emit('toggle');
-  },
+    onCopied: function() {
+      EventBus.emit('trackEvent', {
+        'event_name': `portal_maps_cell_card_copy`,
+        'category': this.cellType.preferredLabel || '',
+        'location': 'map_sidebar_cell_card',
+      });
+    },
+    openCard: function() {
+      this.$emit('open', this.cellType.id);
+    },
+    closeCard: function() {
+      this.$emit('close');
+    },
+  }
 }
 </script>
 

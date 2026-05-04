@@ -85,7 +85,8 @@
         :key="cellType.id"
         :cellType="cellType"
         :isActive="activeCardId === cellType.id"
-        @toggle="activateCard(cellType.id)"
+        @open="openCard(cellType.id)"
+        @close="closeCard"
       />
       <el-pagination
         class="pagination"
@@ -203,6 +204,12 @@ export default {
     },
     activateCard: function(cardId) {
       this.activeCardId = this.activeCardId === cardId ? null : cardId;
+    },
+    openCard: function(cardId) {
+      this.activeCardId = cardId;
+    },
+    closeCard: function() {
+      this.activeCardId = null;
     },
     clearSearchClicked: function() {
       this.searchInput = '';
