@@ -135,6 +135,7 @@ export default {
     updatedCopyContent: function() {
       const {
         preferredLabel,
+        entity,
         species,
         somaLocations,
         circuitRole,
@@ -143,18 +144,58 @@ export default {
         fiberTypeString,
         physiologyString,
         relatedCells,
-        sourceNomenclatureLabel } = this.cellType;
-      let content = `Cell Type: ${preferredLabel}\n`;
-      if (species) content += `Species: ${species}\n`;
-      if (somaLocations?.length) content += `Soma Locations: ${somaLocations.join(', ')}\n`;
-      if (circuitRole) content += `Circuit Role: ${circuitRole}\n`;
-      if (creLine) content += `Cre Line: ${creLine}\n`;
-      if (geneExpressionString) content += `Marker Genes: ${geneExpressionString.replace(/\^(\w+)/g, '$1')}\n`;
-      if (fiberTypeString) content += `Axon Phenotype: ${fiberTypeString}\n`;
-      if (physiologyString) content += `Physiology: ${physiologyString}\n`;
-      if (relatedCells?.length) content += `Related Species Variants: ${relatedCells.map(cell => cell.label).join(', ')}\n`;
-      if (sourceNomenclatureLabel) content += `Source Publication: ${sourceNomenclatureLabel}\n`;
-      return content;
+        sourceNomenclature,
+        sourceNomenclatureLabel
+      } = this.cellType;
+
+      const contentArray = [];
+      if (preferredLabel) {
+        contentArray.push(`<div><strong>Cell Type:</strong> ${preferredLabel}</div>`);
+      }
+      if (entity) {
+        contentArray.push(`<div><strong>Entity:</strong> ${entity}</div>`);
+      }
+      if (species) {
+        contentArray.push(`<div><strong>Species:</strong> ${species}</div>`);
+      }
+      if (somaLocations?.length) {
+        const items = somaLocations.map((location) => `<li>${location}</li>`).join('');
+        contentArray.push(`<div><strong>Soma Locations:</strong><ul>${items}</ul></div>`);
+      }
+      if (circuitRole) {
+        contentArray.push(`<div><strong>Circuit Role:</strong> ${circuitRole}</div>`);
+      }
+      if (creLine) {
+        contentArray.push(`<div><strong>Cre Line:</strong> ${creLine}</div>`);
+      }
+      if (geneExpressionString) {
+        const markerGenes = geneExpressionString.replace(/\^(\w+)/g, '<sup>$1</sup>');
+        contentArray.push(`<div><strong>Marker Genes:</strong> ${markerGenes}</div>`);
+      }
+      if (fiberTypeString) {
+        contentArray.push(`<div><strong>Axon Phenotype:</strong> ${fiberTypeString}</div>`);
+      }
+      if (physiologyString) {
+        contentArray.push(`<div><strong>Physiology:</strong> ${physiologyString}</div>`);
+      }
+      if (relatedCells?.length) {
+        const relatedItems = relatedCells
+          .map((cell) => cell?.label)
+          .filter(Boolean)
+          .map((label) => `<li>${label}</li>`)
+          .join('');
+        if (relatedItems) {
+          contentArray.push(`<div><strong>Related Species Variants:</strong><ul>${relatedItems}</ul></div>`);
+        }
+      }
+      if (sourceNomenclatureLabel) {
+        const sourceLabel = sourceNomenclature
+          ? `<a href="${sourceNomenclature}" target="_blank" rel="noopener noreferrer">${sourceNomenclatureLabel}</a>`
+          : sourceNomenclatureLabel;
+        contentArray.push(`<div><strong>Source Publication:</strong> ${sourceLabel}</div>`);
+      }
+
+      return contentArray.join('\n');
     },
   },
   methods: {
