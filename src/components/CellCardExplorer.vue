@@ -11,6 +11,23 @@
             clearable
             @clear="clearSearchClicked"
           ></el-input>
+          <el-popover
+            width="350"
+            trigger="hover"
+            popper-class="filter-help-popover"
+          >
+            <template #reference>
+              <MapSvgIcon icon="help" class="help" />
+            </template>
+            <div>
+              <strong>Search rules:</strong>
+              <ul>
+                <li>
+                  <strong>Multiple Terms:</strong> Separate terms with a comma (<code>,</code>).
+                </li>
+              </ul>
+            </div>
+          </el-popover>
         </div>
         <el-button
           type="primary"
@@ -71,7 +88,9 @@
 <script>
 /* eslint-disable no-alert, no-console */
 import {
+  ElButton as Button,
   ElCard as Card,
+  ElInput as Input,
   ElPagination as Pagination,
 } from 'element-plus'
 import 'element-plus/es/components/message/style/css';
@@ -80,13 +99,17 @@ import SearchHistory from './SearchHistory.vue'
 import EventBus from './EventBus.js'
 import CellCard from './CellCard.vue'
 import { generateUUID } from '../utils/common.js';
+import { MapSvgIcon } from '@abi-software/svg-sprite';
 
 export default {
   components: {
     SearchFilters,
     SearchHistory,
+    Button,
     Card,
     CellCard,
+    Input,
+    MapSvgIcon,
     Pagination,
   },
   name: 'CellCardExplorer',
