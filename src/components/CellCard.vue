@@ -169,8 +169,7 @@ export default {
         contentArray.push(`<div><strong>Cre Line:</strong> ${creLine}</div>`);
       }
       if (geneExpressionString) {
-        const markerGenes = geneExpressionString.replace(/\^(\w+)/g, '<sup>$1</sup>');
-        contentArray.push(`<div><strong>Marker Genes:</strong> ${markerGenes}</div>`);
+        contentArray.push(`<div><strong>Marker Genes:</strong> ${geneExpressionString}</div>`);
       }
       if (fiberTypeString) {
         contentArray.push(`<div><strong>Axon Phenotype:</strong> ${fiberTypeString}</div>`);
