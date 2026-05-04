@@ -75,10 +75,12 @@
       @cascaderReady="cascaderReady"
     ></SearchFilters>
 
-    <!--
-    <SearchHistory>
-    </SearchHistory>
-    -->
+    <SearchHistory
+      ref="searchHistory"
+      localStorageKey="sparc.science-cell-card-search-history"
+      @search="searchHistorySearch"
+    ></SearchHistory>
+
     <div class="content scrollbar" v-loading="loadingCards" ref="content">
       <CellCard
         v-for="cellType in cellTypes"
@@ -227,18 +229,23 @@ export default {
       this.page = 1;
       this.start = 0;
       this.$refs.filtersRef?.checkShowAllBoxes();
+      if (this.$refs.searchHistory) {
+        this.$refs.searchHistory.selectValue = 'Search history';
+      }
       this.applyFilters(this.activeFilters);
     },
     searchAndFilterUpdate: function() {
       this.page = 1;
       this.start = 0;
       this.applyFilters(this.activeFilters);
+      this.searchHistoryUpdate(this.activeFilters, this.searchInput);
     },
     filterUpdate: function(filters) {
       this.activeFilters = [...filters];
       this.page = 1;
       this.start = 0;
       this.applyFilters(this.activeFilters);
+      this.searchHistoryUpdate(this.activeFilters, this.searchInput);
       this.loadingCards = false;
     },
     numberPerPageUpdate: function(value) {
@@ -259,6 +266,30 @@ export default {
     filtersLoading: function() {
       // SearchFilters only emits loading:true and never emits false.
       // CellCardExplorer filters synchronously, so loading is reset in filterUpdate.
+    },
+    searchHistoryUpdate: function(filters, search) {
+      if (this.$refs.searchHistory) {
+        this.$refs.searchHistory.selectValue = 'Search history';
+        // save history only if there has value
+        if (filters.length || search?.trim()) {
+          this.$refs.searchHistory.addSearchToHistory(filters, search);
+        }
+      }
+    },
+    searchHistorySearch: function(item) {
+      this.searchInput = item.search || '';
+      this.activeFilters = Array.isArray(item.filters) ? [...item.filters] : [];
+      this.page = 1;
+      this.start = 0;
+      this.applyFilters(this.activeFilters);
+
+      if (this.$refs.filtersRef) {
+        if (this.activeFilters.length) {
+          this.$refs.filtersRef.setCascader(this.activeFilters);
+        } else {
+          this.$refs.filtersRef.checkShowAllBoxes();
+        }
+      }
     },
     cascaderReady: function() {
       this.cascaderIsReady = true;
