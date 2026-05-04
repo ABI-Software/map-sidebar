@@ -24,6 +24,22 @@
               <ul>
                 <li>
                   <strong>Multiple Terms:</strong> Separate terms with a comma (<code>,</code>).
+                  This will find cell cards that match any of the terms (an "OR" search).
+                </li>
+                <li>
+                  <strong>Exact Phrase:</strong> Terms within a comma block will be matched as an exact phrase.
+                </li>
+              </ul>
+              <br/>
+              <strong>Examples:</strong>
+              <ul>
+                <li>
+                  <strong>To find by exact phrase:</strong>
+                  Searching for <code>soma location</code> will find any card containing <code>"soma location"</code>.
+                </li>
+                <li>
+                  <strong>To find by multiple terms:</strong>
+                  Searching for <code>mouse, vagal</code> will find cards that contain either <code>mouse</code> OR <code>vagal</code>.
                 </li>
               </ul>
             </div>
