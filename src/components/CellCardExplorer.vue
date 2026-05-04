@@ -190,14 +190,21 @@ export default {
     },
     clearSearchClicked: function() {
       this.searchInput = '';
+      this.searchAndFilterUpdate();
     },
     searchEvent: function(event = false) {
       if (event.keyCode === 13 || event instanceof MouseEvent) {
         this.searchInput = this.searchInput.trim();
+        this.searchAndFilterUpdate();
       }
     },
     onResetClick: function() {
       this.searchInput = '';
+    },
+    searchAndFilterUpdate: function() {
+      this.page = 1;
+      this.start = 0;
+      this.applyFilters(this.activeFilters);
     },
     filterUpdate: function(filters) {
       this.activeFilters = [...filters];
@@ -230,6 +237,43 @@ export default {
     },
     normalizeFacetValue: function(value) {
       return String(value || '').trim().toLowerCase();
+    },
+    normalizeSearchTerms: function(query) {
+      return String(query || '')
+        .split(',')
+        .map((term) => term.trim().toLowerCase())
+        .filter(Boolean);
+    },
+    getCellTypeSearchText: function(cellType) {
+      const relatedCellLabels = (cellType.relatedCells || [])
+        .map((relatedCell) => relatedCell.label)
+        .filter(Boolean)
+        .join(' ');
+
+      return [
+        cellType.preferredLabel,
+        cellType.entity,
+        cellType.species,
+        (cellType.somaLocations || []).join(' '),
+        cellType.circuitRole,
+        cellType.creLine,
+        cellType.geneExpressionString,
+        cellType.fiberTypeString,
+        cellType.physiologyString,
+        cellType.sourceNomenclatureLabel,
+        relatedCellLabels,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+    },
+    matchSearchQuery: function(cellType, searchTerms) {
+      if (!searchTerms.length) {
+        return true;
+      }
+
+      const searchableText = this.getCellTypeSearchText(cellType);
+      return searchTerms.some((term) => searchableText.includes(term));
     },
     buildFacetChildren: function(cellTypes, key) {
       const values = new Set();
@@ -307,6 +351,7 @@ export default {
       return false;
     },
     applyFilters: function(filters) {
+      const searchTerms = this.normalizeSearchTerms(this.searchInput);
       const activeFilters = (filters || []).filter((filter) => {
         return filter?.term && filter?.facet && this.normalizeFacetValue(filter.facet) !== 'show all';
       });
@@ -326,7 +371,7 @@ export default {
         return filterGroups.every((termGroup) => {
           return termGroup.some((filter) => this.matchFieldFilter(cellType, filter));
         });
-      });
+      }).filter((cellType) => this.matchSearchQuery(cellType, searchTerms));
 
       this.totalFilteredCount = filtered.length;
       this.cellTypes = filtered.slice(this.start, this.start + this.numberPerPage);
