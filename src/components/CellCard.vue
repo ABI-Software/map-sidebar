@@ -189,7 +189,7 @@ export default {
       }
       if (sourceNomenclatureLabel) {
         const sourceLabel = sourceNomenclature
-          ? `<a href="${sourceNomenclature}" target="_blank" rel="noopener noreferrer">${sourceNomenclatureLabel}</a>`
+          ? `${sourceNomenclatureLabel} (${sourceNomenclature})`
           : sourceNomenclatureLabel;
         contentArray.push(`<div><strong>Source Publication:</strong> ${sourceLabel}</div>`);
       }
