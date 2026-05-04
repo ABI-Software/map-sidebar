@@ -216,6 +216,11 @@ export default {
     },
     onResetClick: function() {
       this.searchInput = '';
+      this.activeFilters = [];
+      this.page = 1;
+      this.start = 0;
+      this.$refs.filtersRef?.checkShowAllBoxes();
+      this.applyFilters(this.activeFilters);
     },
     searchAndFilterUpdate: function() {
       this.page = 1;
