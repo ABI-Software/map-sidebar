@@ -249,7 +249,6 @@ export default {
     border-left-color: var(--cell-card-color);
     border-radius: 0px;
     z-index: 1;
-    transition: all 0.25s ease;
   }
 
   &.active::before,
@@ -313,7 +312,7 @@ export default {
   &::before {
     content: "";
     position: absolute;
-    bottom: 5px;
+    bottom: 7px;
     left: 5px;
     width: calc(100% - 10px);
     height: 1px;
