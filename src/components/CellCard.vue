@@ -2,6 +2,7 @@
   <div
     class="card"
     :class="{ active: isActive }"
+    :style="cardStyleVars"
   >
     <div
       class="card-header"
@@ -89,10 +90,15 @@
             <li>{{ relatedCell.label }}</li>
           </ul>
         </div>
-        <div v-if="cellType.sourceNomenclature" class="card-section">
+        <div v-if="cellType.sourceNomenclature" class="card-section source-publication-section">
           <label>Source Publication</label>
           <p>
-            <a :href="cellType.sourceNomenclature" target="_blank" rel="noopener noreferrer">
+            <a
+              class="source-publication-link"
+              :href="cellType.sourceNomenclature"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {{ cellType.sourceNomenclatureLabel }}
             </a>
           </p>
@@ -132,6 +138,12 @@ export default {
   },
   emits: ['open', 'close'],
   computed: {
+    cardStyleVars: function() {
+      return {
+        '--cell-card-color': this.cellType?.color || '#8300bf',
+        '--cell-card-source-color': this.cellType?.sourceColor || this.cellType?.color || '#8300bf',
+      };
+    },
     updatedCopyContent: function() {
       const {
         preferredLabel,
@@ -234,13 +246,16 @@ export default {
     width: calc(100% - 15px);
     height: calc(100% - 10px);
     border: 3px solid transparent;
-    border-radius: 5px;
+    border-left-color: var(--cell-card-color);
+    border-radius: 0px;
     z-index: 1;
+    transition: all 0.25s ease;
   }
 
   &.active::before,
   &:hover::before {
-    border-color: $app-primary-color;
+    border-radius: 5px;
+    border-color: var(--cell-card-color);
   }
 
   &:not(:first-child) {
@@ -350,6 +365,30 @@ export default {
     li {
       color: #606266;
     }
+  }
+}
+
+.source-publication-section {
+  border-top: 1px solid var(--cell-card-source-color);
+  padding-top: 0.75rem;
+
+  label {
+    color: var(--cell-card-source-color);
+  }
+}
+
+.source-publication-link {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 4px 8px;
+  border: 1px solid var(--cell-card-source-color);
+  border-radius: 4px;
+  color: white;
+  text-decoration: none;
+  background-color: var(--cell-card-source-color);
+
+  &:hover {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12));
   }
 }
 
