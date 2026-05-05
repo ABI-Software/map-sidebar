@@ -281,7 +281,18 @@ export default {
     background-color: #f7faff;
 
     .card-header {
-      .card-chips {
+      cursor: default;
+
+      &::before {
+        opacity: 1;
+      }
+
+      .card-title {
+        margin: 0;
+        color: var(--cell-card-color);
+      }
+
+      .card-keywords {
         display: none;
       }
     }
@@ -293,10 +304,23 @@ export default {
 }
 
 .card-header {
-  cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  cursor: pointer;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    width: calc(100% - 10px);
+    height: 1px;
+    background-color: var(--cell-card-color);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
 }
 
 .card-header,
