@@ -157,6 +157,8 @@ export default {
       loadingCards: false,
       activeCardId: null,
       cascaderIsReady: false,
+      geneBaseToDisplay: {},
+      geneDisplayToBase: {},
     };
   },
   computed: {
@@ -193,6 +195,8 @@ export default {
                 id: generateUUID(),
               }
             });
+
+            this.setGeneMappings(data.DEFAULT_GENES);
             this.allCellTypes = loadedCellTypes;
             this.filterOptions = this.buildFilterOptions(loadedCellTypes);
             this.applyFilters(this.activeFilters);
@@ -297,6 +301,29 @@ export default {
     normalizeFacetValue: function(value) {
       return String(value || '').trim().toLowerCase();
     },
+    setGeneMappings: function(genes) {
+      const baseToDisplay = {};
+      const displayToBase = {};
+
+      (Array.isArray(genes) ? genes : []).forEach((gene) => {
+        const base = this.normalizeFacetValue(gene?.base);
+        const display = String(gene?.display || '').trim();
+        const normalizedDisplay = this.normalizeFacetValue(display);
+
+        if (!base) return;
+
+        if (display) {
+          baseToDisplay[base] = display;
+          displayToBase[normalizedDisplay] = base;
+          return;
+        }
+
+        baseToDisplay[base] = base;
+      });
+
+      this.geneBaseToDisplay = baseToDisplay;
+      this.geneDisplayToBase = displayToBase;
+    },
     normalizeSearchTerms: function(query) {
       return String(query || '')
         .split(',')
@@ -368,9 +395,9 @@ export default {
           children: this.buildFacetChildren(cellTypes, 'somaLocations'),
         },
         {
-          key: 'circuitRole',
-          label: 'Circuit Role',
-          children: this.buildFacetChildren(cellTypes, 'circuitRole'),
+          key: 'geneBaseNames',
+          label: 'Gene',
+          children: this.buildGeneFacetChildren(cellTypes),
         },
         {
           key: 'sourceNomenclatureLabel',
@@ -380,6 +407,22 @@ export default {
       ];
 
       return options.filter((option) => option.children.length > 0);
+    },
+    buildGeneFacetChildren: function(cellTypes) {
+      const values = new Set();
+
+      cellTypes.forEach((cellType) => {
+        (cellType.geneBaseNames || []).forEach((geneBaseName) => {
+          const normalizedBase = this.normalizeFacetValue(geneBaseName);
+          if (normalizedBase) values.add(normalizedBase);
+        });
+      });
+
+      return [...values]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+        .map((base) => ({
+          label: this.geneBaseToDisplay[base] || base,
+        }));
     },
     matchFieldFilter: function(cellType, filter) {
       const filterFacet = this.normalizeFacetValue(filter.facet);
@@ -396,6 +439,13 @@ export default {
       if (filterTerm === 'soma location') {
         return (cellType.somaLocations || []).some((location) => {
           return this.normalizeFacetValue(location) === filterFacet;
+        });
+      }
+
+      if (filterTerm === 'gene') {
+        const selectedGeneBase = this.geneDisplayToBase[filterFacet] || filterFacet;
+        return (cellType.geneBaseNames || []).some((geneBaseName) => {
+          return this.normalizeFacetValue(geneBaseName) === selectedGeneBase;
         });
       }
 
