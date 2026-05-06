@@ -120,6 +120,9 @@ import CellCard from './CellCard.vue'
 import { generateUUID } from '../utils/common.js';
 import { MapSvgIcon } from '@abi-software/svg-sprite';
 
+let cachedCellCardsData = null
+let pendingCellCardsRequest = null
+
 export default {
   components: {
     SearchFilters,
@@ -179,15 +182,35 @@ export default {
     this.fetchCellTypes(this.envVars.CELL_CARDS_API);
   },
   methods: {
+    getCellCardsData: async function(url) {
+      if (cachedCellCardsData) {
+        return cachedCellCardsData;
+      }
+
+      if (!pendingCellCardsRequest) {
+        pendingCellCardsRequest = fetch(url)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            cachedCellCardsData = data;
+            return data;
+          })
+          .finally(() => {
+            pendingCellCardsRequest = null;
+          });
+      }
+
+      return pendingCellCardsRequest;
+    },
     fetchCellTypes: async function(url) {
       if (url) {
         this.loadingCards = true;
         try {
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const data = await response.json();
+          const data = await this.getCellCardsData(url);
           if (data.DEFAULT_CELL_TYPES) {
             const loadedCellTypes = data.DEFAULT_CELL_TYPES.map((cellType) => {
               return {
