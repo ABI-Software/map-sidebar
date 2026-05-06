@@ -74,9 +74,21 @@
             <span>{{ cellType.creLine }}</span>
           </div>
         </div>
-        <div v-if="cellType.geneExpressionString" class="card-section">
+        <div v-if="formattedMarkerGenes.length" class="card-section">
           <label>Marker Genes</label>
-          <p v-html="transformString(cellType.geneExpressionString)"></p>
+          <div class="marker-genes-list">
+            <a
+              v-for="markerGene in formattedMarkerGenes"
+              :key="markerGene.key"
+              class="marker-gene-link"
+              :href="markerGene.uri"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>{{ markerGene.name }}</span>
+              <sup v-if="markerGene.expression">{{ markerGene.expression }}</sup>
+            </a>
+          </div>
         </div>
         <div v-if="cellType.fiberTypeString" class="card-section">
           <label>Axon Phenotype</label>
@@ -146,6 +158,26 @@ export default {
         '--cell-card-source-color': this.cellType?.sourceColor || this.cellType?.color || '#8300bf',
       };
     },
+    formattedMarkerGenes: function() {
+      return (this.cellType?.markerGenes || [])
+        .map((markerGene, index) => {
+          const name = String(markerGene?.name || '').trim();
+          const expression = String(markerGene?.expression || '').trim();
+          const uri = this.sanitizeMarkerGeneUri(markerGene?.uri, expression);
+
+          if (!name || !uri) {
+            return null;
+          }
+
+          return {
+            key: `${name}-${expression || 'none'}-${index}`,
+            name,
+            expression,
+            uri,
+          };
+        })
+        .filter(Boolean);
+    },
     updatedCopyContent: function() {
       const {
         preferredLabel,
@@ -212,6 +244,19 @@ export default {
     },
   },
   methods: {
+    sanitizeMarkerGeneUri: function(uri, expression = '') {
+      let normalizedUri = String(uri || '').trim();
+      const normalizedExpression = String(expression || '').trim();
+
+      if (!normalizedUri) return '';
+
+      if (normalizedExpression) {
+        const escapedExpression = normalizedExpression.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        normalizedUri = normalizedUri.replace(new RegExp(`\\s+${escapedExpression}$`, 'i'), '');
+      }
+
+      return normalizedUri.trim();
+    },
     transformString: function(str) {
       if (!str) return '';
       // replace the string with ^ with <sup> and the next word with </sup>
@@ -369,6 +414,11 @@ export default {
   padding: 2px 8px;
   background-color: #f0f0f0;
   border-radius: 12px;
+
+  .card-details & {
+    padding: 4px 8px;
+    border: 1px solid #dcdcdc;
+  }
 }
 
 .card-section-group {
@@ -408,7 +458,7 @@ export default {
 .card-section {
   label {
     display: block;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
   }
 }
 
@@ -421,6 +471,34 @@ export default {
   &.success {
     border-color: #b3e5b3;
     background-color: #f0f9eb;
+  }
+}
+
+.marker-genes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.marker-gene-link {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--cell-card-color);
+  border-radius: 4px;
+  color: var(--cell-card-color);
+  background-color: white;
+  text-decoration: none;
+  line-height: 1.2;
+
+  &:hover {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
+  }
+
+  sup {
+    font-size: 0.75em;
+    line-height: 1;
   }
 }
 
