@@ -65,7 +65,7 @@
                 @connectivity-item-close="onConnectivityItemClose"
               />
             </template>
-            <template v-else-if="tab.type === 'cellCardExplorer'">
+            <template v-else-if="tab.type === 'cellCardExplorer' && showCellCards">
               <CellCardExplorer
                 class="sidebar-content-container"
                 v-show="tab.id === activeTabId"
@@ -193,6 +193,10 @@ export default {
       default: false,
     },
     showLongLabel: {
+      type: Boolean,
+      default: false,
+    },
+    showCellCards: {
       type: Boolean,
       default: false,
     },
@@ -526,7 +530,10 @@ export default {
           this.annotationEntry &&
           this.annotationEntry.length > 0
         ) ||
-        tab.type === "cellCardExplorer"
+        (
+          tab.type === "cellCardExplorer" &&
+          this.showCellCards
+        )
       );
     },
   },
