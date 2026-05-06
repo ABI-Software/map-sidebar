@@ -12,21 +12,6 @@
               @click="toggleTitleExpansion"
             >
               <span>{{ capitalise(displayTitle) }}</span>
-              <template v-if="entry.featuresAlert">
-                <el-popover
-                  width="250"
-                  trigger="hover"
-                  :teleported="false"
-                  popper-class="popover-origin-help"
-                >
-                  <template #reference>
-                    <el-icon class="alert"><el-icon-warn-triangle-filled /></el-icon>
-                  </template>
-                  <span style="word-break: keep-all">
-                    {{ entry.featuresAlert }}
-                  </span>
-                </el-popover>
-              </template>
             </div>
             <button
               v-if="showTitleToggle"
@@ -41,7 +26,19 @@
               </el-icon>
             </button>
           </div>
-          <div class="subtitle"><strong>Id: </strong>{{ entry.featureId[0] }}</div>
+          <div class="subtitle">
+            <strong>Id: </strong>{{ entry.featureId[0] }}
+            <el-button
+              round
+              size="small"
+              class="alert-chip"
+              @click="showAlertMessage"
+              v-if="entry.featuresAlert"
+            >
+              <el-icon class="alert"><el-icon-warn-triangle-filled /></el-icon>
+              Notes
+            </el-button>
+          </div>
           <div v-if="hasProvenanceTaxonomyLabel" class="subtitle">
             {{ provSpeciesDescription }}
           </div>
@@ -210,7 +207,7 @@
 
     <div class="content-container content-container-connectivity" v-show="activeView === 'listView'">
       <!-- TODO: To use only one component when the data is ready -->
-      <temmplate v-if="hasSingleConnectivityList">
+      <template v-if="hasSingleConnectivityList">
         <connectivity-reconciliation-list
           v-loading="connectivityLoading"
           :key="`${connectivityKey}list`"
@@ -230,7 +227,7 @@
           @connectivity-clicked="onConnectivityClicked"
           @connectivity-action-click="onConnectivityActionClick"
         />
-      </temmplate>
+      </template>
       <template v-else>
         <connectivity-list
           v-loading="connectivityLoading"
@@ -267,9 +264,16 @@
           :sckanVersion="sckanVersion"
           :connectivityFromMap="connectivityFromMap"
           :connectivityError="connectivityError"
-          :destinationsCombinations="destinationsCombinations"
+          :origins="origins"
+          :components="components"
+          :destinations="destinations"
+          :originsWithDatasets="originsWithDatasets"
+          :componentsWithDatasets="componentsWithDatasets"
+          :destinationsWithDatasets="destinationsWithDatasets"
           :originsCombinations="originsCombinations"
           :componentsCombinations="componentsCombinations"
+          :destinationsCombinations="destinationsCombinations"
+          :hasSingleConnectivityList="hasSingleConnectivityList"
           @tap-node="onTapNode"
         />
       </template>
@@ -282,6 +286,22 @@
         @show-reference-connectivities="onShowReferenceConnectivities"
         @trackEvent="onTrackEvent"
       />
+    </div>
+
+    <div
+      ref="alertElement"
+      class="content-container content-container-alert"
+      v-if="entry.featuresAlert"
+    >
+      <div class="block attribute-title-container">
+        <span class="attribute-title">Alert</span>
+      </div>
+      <div class="block">
+        <div class="alert-block"
+          v-for="alert in entry.featuresAlert"
+          v-html="formatAlertText(alert)"
+        ></div>
+      </div>
     </div>
   </div>
 </template>
@@ -569,6 +589,13 @@ export default {
         sckanVersion: this.sckanVersion,
         connectivityFromMap: this.connectivityFromMap,
         connectivityError: this.connectivityError,
+        origins: this.origins,
+        components: this.components,
+        destinations: this.destinations,
+        originsWithDatasets: this.originsWithDatasets,
+        componentsWithDatasets: this.componentsWithDatasets,
+        destinationsWithDatasets: this.destinationsWithDatasets,
+        hasSingleConnectivityList: this.hasSingleConnectivityList,
         originsCombinations: this.originsCombinations,
         componentsCombinations: this.componentsCombinations,
         destinationsCombinations: this.destinationsCombinations,
@@ -577,6 +604,7 @@ export default {
           ...this.destinationsWithDatasets,
           ...this.originsWithDatasets,
         ],
+        connectivityInfo: this.entry,
       };
       EventBus.emit('show-connectivity-graph', payload);
     },
@@ -770,6 +798,14 @@ export default {
         contentArray.push(contentString);
       }
 
+      // Alert
+      if (this.entry.featuresAlert) {
+        const alertContent = this.entry.featuresAlert
+          .map((alert) => this.formatAlertText(alert))
+          .join('\n');
+        contentArray.push(`<div><strong>Alert</strong></div>\n${alertContent}`);
+      }
+
       return contentArray.join('\n\n<br>');
     },
     getConnectivityDatasets: function (label) {
@@ -895,6 +931,51 @@ export default {
     },
     onTrackEvent: function (data) {
       EventBus.emit('trackEvent', data);
+    },
+    showAlertMessage: function () {
+      // scroll to alert message
+      this.$nextTick(() => {
+        const alertElement = this.$refs.alertElement;
+        if (alertElement) {
+          alertElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest',
+          });
+        }
+      });
+    },
+    formatAlertText: function (text) {
+      if (!text) return '';
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      const linkified = escaped.replace(
+        /(https?:\/\/[^\s"<>\[]+)/g,
+        (url) => {
+          const parts = url.match(/^(.*?)([\].,;:!?]*)$/);
+          const cleanUrl = parts ? parts[1] : url;
+          const suffix = parts ? parts[2] : '';
+          return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${suffix}`;
+        }
+      );
+
+      const normalised = linkified
+        .replace(/\\n/g, '\n')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n');
+
+      return normalised
+        .split('\n')
+        .map((line) => {
+          const withBoldLabel = line.replace(
+            /^\s*([A-Za-z][^:<]{0,120}:)/,
+            '<strong>$1</strong>'
+          );
+          return `<div class="alert-line">${withBoldLabel}</div>`;
+        })
+        .join('\n');
     },
   },
   mounted: function () {
@@ -1072,15 +1153,6 @@ export default {
   font-weight: 600;
   /* font-weight: bold; */
   text-transform: uppercase;
-}
-
-.main {
-  .el-button.is-round {
-    border-radius: 4px;
-    padding: 9px 20px 10px 20px;
-    display: flex;
-    height: 36px;
-  }
 }
 
 .button {
@@ -1405,10 +1477,6 @@ export default {
 
 .content-container-connectivity {
   position: relative;
-
-  &:not([style*="display: none"]) ~ .content-container-references {
-    margin-top: -1.25rem;
-  }
 }
 
 .attribute-content {
@@ -1450,6 +1518,50 @@ export default {
 
   &:last-of-type {
     margin-bottom: 0.5em;
+  }
+}
+
+.alert-block {
+  background-color: var(--el-color-warning-light-9);
+  border: 1px dashed var(--el-color-warning);
+  padding: 0.75rem;
+  border-radius: 4px;
+
+  :deep(.alert-line + .alert-line) {
+    margin-top: 0.5rem;
+  }
+
+  :deep(a) {
+    color: $app-primary-color;
+    word-break: break-all;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+.alert-chip {
+  margin-left: 5px;
+  background-color: $app-primary-color;
+  border-color: $app-primary-color;
+  color: #fff;
+
+  &:hover {
+    color: #fff !important;
+    background-color: #ac76c5 !important;
+    border: 1px solid #ac76c5 !important;
+  }
+
+  :deep(> span) {
+    gap: 2px;
+  }
+
+  .alert {
+    width: 1rem;
+    height: 1rem;
+    color: inherit;
+    margin: 0;
   }
 }
 </style>
