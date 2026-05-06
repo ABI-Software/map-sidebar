@@ -80,11 +80,11 @@
         </div>
         <div v-if="cellType.fiberTypeString" class="card-section">
           <label>Axon Phenotype</label>
-          <p>{{ cellType.fiberTypeString }}</p>
+          <div class="card-section-content">{{ cellType.fiberTypeString }}</div>
         </div>
         <div v-if="cellType.physiologyString" class="card-section">
           <label>Physiology</label>
-          <p>{{ cellType.physiologyString }}</p>
+          <div class="card-section-content success">{{ cellType.physiologyString }}</div>
         </div>
         <div v-if="cellType.relatedCells?.length" class="card-section">
           <label>Related Species Variants</label>
@@ -409,6 +409,18 @@ export default {
   label {
     display: block;
     margin-bottom: 0.25rem;
+  }
+}
+
+.card-section-content {
+  padding: 0.5rem;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  border: 1px solid #dcdcdc;
+
+  &.success {
+    border-color: #b3e5b3;
+    background-color: #f0f9eb;
   }
 }
 
