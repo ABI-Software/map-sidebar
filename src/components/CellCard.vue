@@ -45,32 +45,34 @@
     </div>
     <div class="card-details">
       <div class="card-details-inner">
-        <div v-if="cellType.entity" class="card-section">
-          <label>Entity</label>
-          <p>{{ cellType.entity }}</p>
-        </div>
-        <div v-if="cellType.species" class="card-section">
-          <label>Species</label>
-          <p>{{ cellType.species }}</p>
-        </div>
-        <div v-if="cellType.somaLocations?.length" class="card-section">
-          <label>Soma Location</label>
-          <div class="card-chips">
-            <span
-              v-for="somaLocation in cellType.somaLocations"
-              class="card-chip"
-              :key="somaLocation">
-              {{ somaLocation }}
-            </span>
+        <div class="card-section-group">
+          <div v-if="cellType.entity" class="card-section-inline">
+            <label>Entity:</label>
+            <span>{{ cellType.entity }}</span>
           </div>
-        </div>
-        <div v-if="cellType.circuitRole" class="card-section">
-          <label>Circuit Role</label>
-          <p>{{ cellType.circuitRole }}</p>
-        </div>
-        <div v-if="cellType.creLine" class="card-section">
-          <label>Cre Line</label>
-          <p>{{ cellType.creLine }}</p>
+          <div v-if="cellType.species" class="card-section-inline">
+            <label>Species:</label>
+            <span>{{ cellType.species }}</span>
+          </div>
+          <div v-if="cellType.somaLocations?.length" class="card-section-inline">
+            <label>Soma Location:</label>
+            <div class="card-chips">
+              <span
+                v-for="somaLocation in cellType.somaLocations"
+                class="card-chip"
+                :key="somaLocation">
+                {{ somaLocation }}
+              </span>
+            </div>
+          </div>
+          <div v-if="cellType.circuitRole" class="card-section-inline">
+            <label>Circuit Role:</label>
+            <span>{{ cellType.circuitRole }}</span>
+          </div>
+          <div v-if="cellType.creLine" class="card-section-inline">
+            <label>Cre Line:</label>
+            <span>{{ cellType.creLine }}</span>
+          </div>
         </div>
         <div v-if="cellType.geneExpressionString" class="card-section">
           <label>Marker Genes</label>
@@ -369,11 +371,16 @@ export default {
   border-radius: 12px;
 }
 
-.card-section {
+.card-section-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.card-section,
+.card-section-inline {
   label {
     font-weight: 600;
-    display: block;
-    margin-bottom: 0.25rem;
   }
 
   p {
@@ -388,6 +395,20 @@ export default {
     li {
       color: #606266;
     }
+  }
+}
+
+.card-section-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 20px;
+}
+
+.card-section {
+  label {
+    display: block;
+    margin-bottom: 0.25rem;
   }
 }
 
