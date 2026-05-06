@@ -485,10 +485,11 @@ export default {
   align-items: flex-start;
   gap: 0.1rem;
   padding: 0.25rem 0.5rem;
-  border: 1px solid var(--cell-card-color);
+  font-size: 12px;
+  border: 1px solid $app-primary-color;
   border-radius: 4px;
-  color: var(--cell-card-color);
-  background-color: white;
+  color: $app-primary-color;
+  background-color: #f9f2fc;
   text-decoration: none;
   line-height: 1.2;
 
