@@ -604,6 +604,7 @@ export default {
           ...this.destinationsWithDatasets,
           ...this.originsWithDatasets,
         ],
+        connectivityInfo: this.entry,
       };
       EventBus.emit('show-connectivity-graph', payload);
     },
