@@ -185,6 +185,7 @@ export default {
   watch: {
     activeSpecies: {
       deep: true,
+      immediate: true,
       handler: 'syncActiveSpeciesFilters',
     },
   },
