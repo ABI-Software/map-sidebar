@@ -208,28 +208,23 @@ export default {
     syncActiveSpeciesFilters: function() {
       this.page = 1;
       this.start = 0;
-      const normalizedActiveSpecies = this.activeSpecies.map(
-        (species) => this.normalizeActiveSpeciesFilterTerm(species)
-      );
+      const normalizedActiveSpecies = this.getValidatedActiveSpecies();
+      const nonSpeciesFilters = this.activeFilters.filter((activeFilter) => {
+        return activeFilter?.term?.toLowerCase() !== 'species';
+      });
 
-      if (normalizedActiveSpecies.length) {
-        const nonSpeciesFilters = this.activeFilters.filter((activeFilter) => {
-          return activeFilter?.term?.toLowerCase() !== 'species';
-        });
+      const speciesFilters = normalizedActiveSpecies.map((species) => {
+        return {
+          facetPropPath: 'species',
+          facet: capitalise(species),
+          term: 'Species',
+          tagLabel: capitalise(species),
+        };
+      });
 
-        const speciesFilters = normalizedActiveSpecies.map((species) => {
-          return {
-            facetPropPath: 'species',
-            facet: capitalise(species),
-            term: 'Species',
-            tagLabel: capitalise(species),
-          };
-        });
-
-        this.activeFilters = [...nonSpeciesFilters, ...speciesFilters];
-        this.syncCascaderFromActiveFilters();
-        this.applyFilters(this.activeFilters);
-      }
+      this.activeFilters = [...nonSpeciesFilters, ...speciesFilters];
+      this.syncCascaderFromActiveFilters();
+      this.applyFilters(this.activeFilters);
     },
     getCellCardsData: async function(url) {
       if (cachedCellCardsData) {
@@ -271,7 +266,7 @@ export default {
             this.setGeneMappings(data.DEFAULT_GENES);
             this.allCellTypes = loadedCellTypes;
             this.filterOptions = this.buildFilterOptions(loadedCellTypes);
-            this.applyFilters(this.activeFilters);
+            this.syncActiveSpeciesFilters();
           }
         } catch (error) {
           console.error('Error fetching cell types:', error);
@@ -373,6 +368,28 @@ export default {
     },
     normalizeFacetValue: function(value) {
       return String(value || '').trim().toLowerCase();
+    },
+    getAvailableSpeciesSet: function() {
+      const availableSpecies = new Set();
+
+      this.allCellTypes.forEach((cellType) => {
+        const species = this.normalizeFacetValue(cellType?.species);
+        if (species) {
+          availableSpecies.add(species);
+        }
+      });
+
+      return availableSpecies;
+    },
+    getValidatedActiveSpecies: function() {
+      const availableSpecies = this.getAvailableSpeciesSet();
+      const normalizedActiveSpecies = this.activeSpecies
+        .map((species) => this.normalizeActiveSpeciesFilterTerm(species))
+        .filter(Boolean);
+
+      return [...new Set(normalizedActiveSpecies)].filter((species) => {
+        return availableSpecies.has(species);
+      });
     },
     // To update the species from the flatmap,
     // mainly from "human male" and "human female" to "human".
