@@ -140,6 +140,10 @@ export default {
       type: Object,
       default: () => {},
     },
+    activeSpecies: {
+      type: Array,
+      default: () => [],
+    },
   },
   data: function () {
     return {
@@ -176,6 +180,19 @@ export default {
           between: "'species' AND 'soma location'",
         },
       }
+    },
+  },
+  watch: {
+    activeSpecies: {
+      deep: true,
+      handler: function() {
+        this.page = 1;
+        this.start = 0;
+        const normalizedActiveSpecies = this.activeSpecies.map(
+          (species) => this.normalizeActiveSpeciesFilterTerm(species)
+        );
+        this.applyFilters(this.activeFilters);
+      },
     },
   },
   mounted: function() {
@@ -323,6 +340,15 @@ export default {
     },
     normalizeFacetValue: function(value) {
       return String(value || '').trim().toLowerCase();
+    },
+    // To update the species from the flatmap,
+    // mainly from "human male" and "human female" to "human".
+    normalizeActiveSpeciesFilterTerm: function(value) {
+      const normalized = this.normalizeFacetValue(value);
+      if (normalized === 'human male' || normalized === 'human female') {
+        return 'human';
+      }
+      return normalized;
     },
     setGeneMappings: function(genes) {
       const baseToDisplay = {};

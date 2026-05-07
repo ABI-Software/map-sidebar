@@ -70,6 +70,7 @@
                 class="sidebar-content-container"
                 v-show="tab.id === activeTabId"
                 :envVars="envVars"
+                :activeSpecies="activeSpeciesForEntries"
                 @search-changed="searchChanged(tab.id, $event)"
                 @hover-changed="hoverChanged(tab.id, $event)"
               />
@@ -208,6 +209,7 @@ export default {
       activeTabId: 1,
       activeAnnotationData: { tabType: "annotation" },
       activeConnectivityData: { tabType: "connectivity" },
+      activeSpeciesForEntries: [],
       state: {
         dataset: {
           search: '',
@@ -517,7 +519,17 @@ export default {
         ...data,
       };
       this.$emit('trackEvent', taggingData);
-    }
+    },
+    /**
+     * @public
+     * Update the active species to use in filters.
+     * Used by SplitFlow component.
+     * @param activeSpecies
+     */
+    updateActiveSpeciesForEntries: function (activeSpecies) {
+      const speciesEntries = Array.isArray(activeSpecies) ? activeSpecies : [activeSpecies];
+      this.activeSpeciesForEntries = [...new Set(speciesEntries.filter(Boolean))];
+    },
   },
   computed: {
     // This should respect the information provided by the property
