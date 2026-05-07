@@ -117,7 +117,7 @@ import SearchFilters from './SearchFilters.vue'
 import SearchHistory from './SearchHistory.vue'
 import EventBus from './EventBus.js'
 import CellCard from './CellCard.vue'
-import { generateUUID } from '../utils/common.js';
+import { capitalise, generateUUID } from '../utils/common.js';
 import { MapSvgIcon } from '@abi-software/svg-sprite';
 
 let cachedCellCardsData = null
@@ -207,9 +207,9 @@ export default {
         const speciesFilters = normalizedActiveSpecies.map((species) => {
           return {
             facetPropPath: 'species',
-            facet: species.charAt(0).toUpperCase() + species.slice(1),
+            facet: capitalise(species),
             term: 'Species',
-            tagLabel: species.charAt(0).toUpperCase() + species.slice(1),
+            tagLabel: capitalise(species),
           };
         });
 

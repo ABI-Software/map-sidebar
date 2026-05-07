@@ -29,6 +29,7 @@
 
 <script>
 import EventBus from './EventBus';
+import { capitalise as capitaliseText } from '../utils/common.js';
 
 export default {
   name: "ConnectivityCard",
@@ -79,8 +80,7 @@ export default {
   },
   methods: {
     capitalise: function (text) {
-      if (text) return text.charAt(0).toUpperCase() + text.slice(1);
-      return "";
+      return capitaliseText(text);
     },
     cardClicked: function (data) {
       if (!this.loading) {

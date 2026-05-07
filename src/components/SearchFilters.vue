@@ -157,20 +157,17 @@ import '@abi-software/svg-sprite/dist/style.css'
 import { AlgoliaClient } from '../algolia/algolia.js'
 import { facetPropPathMapping } from '../algolia/utils.js'
 import EventBus from './EventBus.js'
-
-const capitalise = function (txt) {
-  return txt.charAt(0).toUpperCase() + txt.slice(1)
-}
+import { capitalise as capitaliseText } from '../utils/common.js'
 
 const convertReadableLabel = function (original) {
   const name = original.toLowerCase()
   if (speciesMap[name]) {
-    return capitalise(speciesMap[name])
+    return capitaliseText(speciesMap[name])
   } else {
     if (original === original.toUpperCase()) {
       return original
     }
-    return capitalise(name)
+    return capitaliseText(name)
   }
 }
 

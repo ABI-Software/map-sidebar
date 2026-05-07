@@ -45,9 +45,7 @@
 import SideBar from './components/SideBar.vue'
 import EventBus from './components/EventBus.js'
 import exampleConnectivityInput from './exampleConnectivityInput.js'
-
-
-const capitalise = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+import { capitalise } from './utils/common.js'
 
 const flatmapQuery = (flatmapApi, sql) => {
   const data = { sql: sql };
