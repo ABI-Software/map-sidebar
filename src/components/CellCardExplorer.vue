@@ -214,6 +214,7 @@ export default {
         });
 
         this.activeFilters = [...nonSpeciesFilters, ...speciesFilters];
+        this.$refs.filtersRef?.setCascader(this.activeFilters);
         this.applyFilters(this.activeFilters);
       }
     },
