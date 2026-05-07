@@ -185,41 +185,42 @@ export default {
   watch: {
     activeSpecies: {
       deep: true,
-      handler: function() {
-        this.page = 1;
-        this.start = 0;
-        const normalizedActiveSpecies = this.activeSpecies.map(
-          (species) => this.normalizeActiveSpeciesFilterTerm(species)
-        );
-
-        if (normalizedActiveSpecies.length) {
-          if (this.activeFilters.length) {
-            this.activeFilters = this.activeFilters.filter((activeFilter) => {
-              if (activeFilter?.term?.toLowerCase() === 'species') {
-                const filterFacetNormalized = this.normalizeFacetValue(activeFilter.facet);
-                return normalizedActiveSpecies.includes(filterFacetNormalized);
-              }
-              return true;
-            });
-          } else {
-            this.activeFilters = normalizedActiveSpecies.map((species) => {
-              return {
-                facetPropPath: 'species',
-                facet: species.charAt(0).toUpperCase() + species.slice(1),
-                term: 'Species',
-                tagLabel: species.charAt(0).toUpperCase() + species.slice(1),
-              };
-            });
-          }
-          this.applyFilters(this.activeFilters);
-        }
-      },
+      handler: 'syncActiveSpeciesFilters',
     },
   },
   mounted: function() {
     this.fetchCellTypes(this.envVars.CELL_CARDS_API);
   },
   methods: {
+    syncActiveSpeciesFilters: function() {
+      this.page = 1;
+      this.start = 0;
+      const normalizedActiveSpecies = this.activeSpecies.map(
+        (species) => this.normalizeActiveSpeciesFilterTerm(species)
+      );
+
+      if (normalizedActiveSpecies.length) {
+        if (this.activeFilters.length) {
+          this.activeFilters = this.activeFilters.filter((activeFilter) => {
+            if (activeFilter?.term?.toLowerCase() === 'species') {
+              const filterFacetNormalized = this.normalizeFacetValue(activeFilter.facet);
+              return normalizedActiveSpecies.includes(filterFacetNormalized);
+            }
+            return true;
+          });
+        } else {
+          this.activeFilters = normalizedActiveSpecies.map((species) => {
+            return {
+              facetPropPath: 'species',
+              facet: species.charAt(0).toUpperCase() + species.slice(1),
+              term: 'Species',
+              tagLabel: species.charAt(0).toUpperCase() + species.slice(1),
+            };
+          });
+        }
+        this.applyFilters(this.activeFilters);
+      }
+    },
     getCellCardsData: async function(url) {
       if (cachedCellCardsData) {
         return cachedCellCardsData;
