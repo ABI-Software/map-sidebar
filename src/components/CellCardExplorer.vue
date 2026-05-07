@@ -200,24 +200,20 @@ export default {
       );
 
       if (normalizedActiveSpecies.length) {
-        if (this.activeFilters.length) {
-          this.activeFilters = this.activeFilters.filter((activeFilter) => {
-            if (activeFilter?.term?.toLowerCase() === 'species') {
-              const filterFacetNormalized = this.normalizeFacetValue(activeFilter.facet);
-              return normalizedActiveSpecies.includes(filterFacetNormalized);
-            }
-            return true;
-          });
-        } else {
-          this.activeFilters = normalizedActiveSpecies.map((species) => {
-            return {
-              facetPropPath: 'species',
-              facet: species.charAt(0).toUpperCase() + species.slice(1),
-              term: 'Species',
-              tagLabel: species.charAt(0).toUpperCase() + species.slice(1),
-            };
-          });
-        }
+        const nonSpeciesFilters = this.activeFilters.filter((activeFilter) => {
+          return activeFilter?.term?.toLowerCase() !== 'species';
+        });
+
+        const speciesFilters = normalizedActiveSpecies.map((species) => {
+          return {
+            facetPropPath: 'species',
+            facet: species.charAt(0).toUpperCase() + species.slice(1),
+            term: 'Species',
+            tagLabel: species.charAt(0).toUpperCase() + species.slice(1),
+          };
+        });
+
+        this.activeFilters = [...nonSpeciesFilters, ...speciesFilters];
         this.applyFilters(this.activeFilters);
       }
     },
