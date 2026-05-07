@@ -193,6 +193,18 @@ export default {
     this.fetchCellTypes(this.envVars.CELL_CARDS_API);
   },
   methods: {
+    syncCascaderFromActiveFilters: function() {
+      if (!this.cascaderIsReady || !this.$refs.filtersRef) {
+        return;
+      }
+
+      if (this.activeFilters.length) {
+        this.$refs.filtersRef.setCascader(this.activeFilters);
+        return;
+      }
+
+      this.$refs.filtersRef.checkShowAllBoxes();
+    },
     syncActiveSpeciesFilters: function() {
       this.page = 1;
       this.start = 0;
@@ -215,7 +227,7 @@ export default {
         });
 
         this.activeFilters = [...nonSpeciesFilters, ...speciesFilters];
-        this.$refs.filtersRef?.setCascader(this.activeFilters);
+        this.syncCascaderFromActiveFilters();
         this.applyFilters(this.activeFilters);
       }
     },
@@ -357,6 +369,7 @@ export default {
     },
     cascaderReady: function() {
       this.cascaderIsReady = true;
+      this.syncCascaderFromActiveFilters();
     },
     normalizeFacetValue: function(value) {
       return String(value || '').trim().toLowerCase();
