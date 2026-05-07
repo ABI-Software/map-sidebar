@@ -191,7 +191,28 @@ export default {
         const normalizedActiveSpecies = this.activeSpecies.map(
           (species) => this.normalizeActiveSpeciesFilterTerm(species)
         );
-        this.applyFilters(this.activeFilters);
+
+        if (normalizedActiveSpecies.length) {
+          if (this.activeFilters.length) {
+            this.activeFilters = this.activeFilters.filter((activeFilter) => {
+              if (activeFilter?.term?.toLowerCase() === 'species') {
+                const filterFacetNormalized = this.normalizeFacetValue(activeFilter.facet);
+                return normalizedActiveSpecies.includes(filterFacetNormalized);
+              }
+              return true;
+            });
+          } else {
+            this.activeFilters = normalizedActiveSpecies.map((species) => {
+              return {
+                facetPropPath: 'species',
+                facet: species.charAt(0).toUpperCase() + species.slice(1),
+                term: 'Species',
+                tagLabel: species.charAt(0).toUpperCase() + species.slice(1),
+              };
+            });
+          }
+          this.applyFilters(this.activeFilters);
+        }
       },
     },
   },
