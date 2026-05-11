@@ -33,7 +33,7 @@
               size="small"
               class="alert-chip"
               @click="showAlertMessage"
-              v-if="entry.featuresAlert"
+              v-if="entry.featuresAlert?.length"
             >
               <el-icon class="alert"><el-icon-warn-triangle-filled /></el-icon>
               Notes
@@ -291,7 +291,7 @@
     <div
       ref="alertElement"
       class="content-container content-container-alert"
-      v-if="entry.featuresAlert"
+      v-if="entry.featuresAlert?.length"
     >
       <div class="block attribute-title-container">
         <span class="attribute-title">Notes</span>
@@ -799,7 +799,7 @@ export default {
       }
 
       // Alert (Notes)
-      if (this.entry.featuresAlert) {
+      if (this.entry.featuresAlert?.length) {
         const alertContent = this.entry.featuresAlert
           .map((alert) => this.formatAlertText(alert))
           .join('\n');
