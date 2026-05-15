@@ -242,6 +242,7 @@ export default {
               title: 'View Flatmap',
               type: 'Flatmap',
               discoverId: this.discoverId,
+              doi: this.entry.doi,
               version: this.version,
             }
             this.items['Flatmaps'].push({
@@ -328,6 +329,7 @@ export default {
             s3uri: this.entry.s3uri,
             title: 'View plot',
             type: 'Plot',
+            doi: this.entry.doi,
             discoverId: this.discoverId,
             version: this.version,
           }
@@ -372,6 +374,7 @@ export default {
             title: "View 3D scaffold",
             type: "Scaffold",
             discoverId: this.discoverId,
+            doi: this.entry.doi,
             apiLocation: this.envVars.API_LOCATION,
             version: this.version,
             banner: this.thumbnail,
@@ -442,6 +445,7 @@ export default {
               title: 'View simulation',
               type: 'Simulation',
               discoverId: this.discoverId,
+              doi: this.entry.doi,
               version: this.version,
             }
             this.items['Simulations'].push({
