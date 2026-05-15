@@ -22,6 +22,9 @@
               {{ somaLocation }}
             </span>
           </div>
+          <span class="source-publication-chip" v-if="cellType.sourceNomenclature">
+            {{ cellType.sourceNomenclatureLabel }}
+          </span>
         </div>
       </div>
       <div class="title-buttons" @click.stop>
@@ -154,7 +157,6 @@ export default {
   computed: {
     cardStyleVars: function() {
       return {
-        '--cell-card-color': this.cellType?.color || '#8300bf',
         '--cell-card-source-color': this.cellType?.sourceColor || this.cellType?.color || '#8300bf',
       };
     },
@@ -293,15 +295,13 @@ export default {
     width: calc(100% - 15px);
     height: calc(100% - 10px);
     border: 3px solid transparent;
-    border-left-color: var(--cell-card-color);
-    border-radius: 0px;
+    border-radius: 5px;
     z-index: 1;
   }
 
   &.active::before,
   &:hover::before {
-    border-radius: 5px;
-    border-color: var(--cell-card-color);
+    border-color: $app-primary-color;
   }
 
   &:not(:first-child) {
@@ -335,7 +335,6 @@ export default {
 
       .card-title {
         margin: 0;
-        color: var(--cell-card-color);
       }
 
       .card-keywords {
@@ -363,7 +362,6 @@ export default {
     left: 5px;
     width: calc(100% - 10px);
     height: 1px;
-    background-color: var(--cell-card-color);
     opacity: 0;
     transition: opacity 0.25s ease;
   }
@@ -503,24 +501,23 @@ export default {
   }
 }
 
-.source-publication-section {
-  border-top: 1px solid var(--cell-card-source-color);
-  padding-top: 0.75rem;
+.source-publication-chip,
+.source-publication-link {
+  display: inline-block;
+  border: 1px solid var(--cell-card-source-color);
+  border-radius: 4px;
+  color: white !important;
+  text-decoration: none;
+  background-color: var(--cell-card-source-color);
+}
 
-  label {
-    color: var(--cell-card-source-color);
-  }
+.source-publication-chip {
+  padding: 2px 6px;
 }
 
 .source-publication-link {
-  display: inline-block;
   margin-top: 0.25rem;
   padding: 4px 8px;
-  border: 1px solid var(--cell-card-source-color);
-  border-radius: 4px;
-  color: white;
-  text-decoration: none;
-  background-color: var(--cell-card-source-color);
 
   &:hover {
     background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12));
