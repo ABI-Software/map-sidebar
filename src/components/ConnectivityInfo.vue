@@ -330,7 +330,7 @@ import {
   ExternalResourceCard,
 } from '@abi-software/map-utilities';
 import '@abi-software/map-utilities/dist/style.css';
-import { capitalise as capitaliseText } from '../utils/common.js'
+import { capitalise } from '../utils/common.js'
 
 const titleCase = (str) => {
   return str.replace(/\w\S*/g, (t) => {
@@ -506,7 +506,7 @@ export default {
       return titleCase(title)
     },
     capitalise: function (text) {
-      return capitaliseText(text)
+      return capitalise(text)
     },
     toggleTitleExpansion: function () {
       this.isTitleExpanded = !this.isTitleExpanded;
