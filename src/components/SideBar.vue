@@ -65,6 +65,16 @@
                 @connectivity-item-close="onConnectivityItemClose"
               />
             </template>
+            <template v-else-if="tab.type === 'cellCardExplorer' && showCellCards">
+              <CellCardExplorer
+                class="sidebar-content-container"
+                v-show="tab.id === activeTabId"
+                :envVars="envVars"
+                :activeSpecies="activeSpeciesForEntries"
+                @search-changed="searchChanged(tab.id, $event)"
+                @hover-changed="hoverChanged(tab.id, $event)"
+              />
+            </template>
             <template v-else>
               <DatasetExplorer
                 class="sidebar-content-container"
@@ -95,6 +105,7 @@ import EventBus from './EventBus.js'
 import Tabs from './Tabs.vue'
 import AnnotationTool from './AnnotationTool.vue'
 import ConnectivityExplorer from './ConnectivityExplorer.vue'
+import CellCardExplorer from './CellCardExplorer.vue'
 import { removeShowAllFacets } from '../algolia/utils.js'
 
 /**
@@ -110,6 +121,7 @@ export default {
     Icon,
     AnnotationTool,
     ConnectivityExplorer,
+    CellCardExplorer,
   },
   name: 'SideBar',
   props: {
@@ -119,6 +131,7 @@ export default {
         { title: 'Dataset Explorer', id: 1, type: 'datasetExplorer', closable: false },
         { title: 'Connectivity Explorer', id: 2, type: 'connectivityExplorer', closable: false },
         { title: 'Annotation', id: 3, type: 'annotation', closable: true },
+        { title: 'Cell Card Explorer', id: 4, type: 'cellCardExplorer', closable: false },
       ],
     },
     /**
@@ -184,6 +197,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    showCellCards: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: function () {
     return {
@@ -192,6 +209,7 @@ export default {
       activeTabId: 1,
       activeAnnotationData: { tabType: "annotation" },
       activeConnectivityData: { tabType: "connectivity" },
+      activeSpeciesForEntries: [],
       state: {
         dataset: {
           search: '',
@@ -501,7 +519,17 @@ export default {
         ...data,
       };
       this.$emit('trackEvent', taggingData);
-    }
+    },
+    /**
+     * @public
+     * Update the active species to use in filters.
+     * Used by SplitFlow component.
+     * @param activeSpecies
+     */
+    updateActiveSpeciesForEntries: function (activeSpecies) {
+      const speciesEntries = Array.isArray(activeSpecies) ? activeSpecies : [activeSpecies];
+      this.activeSpeciesForEntries = [...new Set(speciesEntries.filter(Boolean))];
+    },
   },
   computed: {
     // This should respect the information provided by the property
@@ -513,6 +541,10 @@ export default {
           tab.type === "annotation" &&
           this.annotationEntry &&
           this.annotationEntry.length > 0
+        ) ||
+        (
+          tab.type === "cellCardExplorer" &&
+          this.showCellCards
         )
       );
     },

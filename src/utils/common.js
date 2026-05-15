@@ -1,0 +1,19 @@
+export function generateUUID() {
+  const arr = new Uint8Array(16);
+  window.crypto.getRandomValues(arr);
+
+  arr[6] = (arr[6] & 0x0f) | 0x40;
+  arr[8] = (arr[8] & 0x3f) | 0x80;
+
+  const hex = Array.from(arr)
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('');
+
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+export function capitalise(text) {
+  if (!text) return '';
+  const value = String(text);
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}

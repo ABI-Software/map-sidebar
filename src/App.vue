@@ -45,9 +45,7 @@
 import SideBar from './components/SideBar.vue'
 import EventBus from './components/EventBus.js'
 import exampleConnectivityInput from './exampleConnectivityInput.js'
-
-
-const capitalise = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+import { capitalise } from './utils/common.js'
 
 const flatmapQuery = (flatmapApi, sql) => {
   const data = { sql: sql };
@@ -136,6 +134,7 @@ export default {
         BL_SERVER_URL: import.meta.env.VITE_APP_BL_SERVER_URL,
         ROOT_URL: import.meta.env.VITE_APP_ROOT_URL,
         FLATMAPAPI_LOCATION: import.meta.env.VITE_FLATMAPAPI_LOCATION,
+        CELL_CARDS_API: import.meta.env.VITE_APP_CELL_CARDS_API,
       },
       connectivityEntry: [],
       createData: {
