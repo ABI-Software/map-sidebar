@@ -305,7 +305,14 @@ export class AlgoliaClient {
                 return o.curie
               }
             }).filter(Boolean)
-          : []
+          : [],
+        labels: h.anatomy
+          ? h.anatomy.organ.map(o => {
+              if (filteredOrganNames.includes(o.name.toLowerCase())) {
+                return o.name
+              }
+            }).filter(Boolean)
+          : [],
       }
       return data
     })
