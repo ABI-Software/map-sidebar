@@ -65,6 +65,19 @@
                 @connectivity-item-close="onConnectivityItemClose"
               />
             </template>
+            <template v-else-if="tab.type === 'cellCardExplorer' && showCellCards">
+              <CellCardExplorer
+                :ref="'cellCardExplorerTab_' + tab.id"
+                class="sidebar-content-container"
+                v-show="tab.id === activeTabId"
+                :envVars="envVars"
+                :activeSpecies="activeSpeciesForEntries"
+                @dataset-search="openDatasetSearchFromCellCard($event)"
+                @connectivity-search="openConnectivitySearch($event.facets, $event.query)"
+                @soma-location-hovered="showSomaLocation"
+                @soma-locations-ready="onSomaLocationsReady"
+              />
+            </template>
             <template v-else>
               <DatasetExplorer
                 class="sidebar-content-container"
@@ -95,6 +108,7 @@ import EventBus from './EventBus.js'
 import Tabs from './Tabs.vue'
 import AnnotationTool from './AnnotationTool.vue'
 import ConnectivityExplorer from './ConnectivityExplorer.vue'
+import CellCardExplorer from './CellCardExplorer.vue'
 import { removeShowAllFacets } from '../algolia/utils.js'
 
 /**
@@ -110,6 +124,7 @@ export default {
     Icon,
     AnnotationTool,
     ConnectivityExplorer,
+    CellCardExplorer,
   },
   name: 'SideBar',
   props: {
@@ -119,6 +134,7 @@ export default {
         { title: 'Dataset Explorer', id: 1, type: 'datasetExplorer', closable: false },
         { title: 'Connectivity Explorer', id: 2, type: 'connectivityExplorer', closable: false },
         { title: 'Annotation', id: 3, type: 'annotation', closable: true },
+        { title: 'Cell Card Explorer', id: 4, type: 'cellCardExplorer', closable: false },
       ],
     },
     /**
@@ -184,6 +200,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    showCellCards: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: function () {
     return {
@@ -192,6 +212,7 @@ export default {
       activeTabId: 1,
       activeAnnotationData: { tabType: "annotation" },
       activeConnectivityData: { tabType: "connectivity" },
+      activeSpeciesForEntries: [],
       state: {
         dataset: {
           search: '',
@@ -234,6 +255,16 @@ export default {
       if (activeTabType === 'annotation') {
         this.activeAnnotationData = data;
       }
+    },
+    /**
+     * This event is emitted when the mouse hover on or off a soma location in cell card explorer.
+     * @param name Soma location
+     */
+    showSomaLocation: function (name) {
+      this.$emit('soma-location-hovered', name);
+    },
+    onSomaLocationsReady: function (somaLocations) {
+      this.$emit('soma-locations-ready', somaLocations);
     },
     /**
      * This event is emitted when the show connectivity button is clicked.
@@ -298,6 +329,42 @@ export default {
         const datasetExplorerTabRef = this.getTabRef(undefined, 'datasetExplorer', true);
         datasetExplorerTabRef.openSearch(facets, query);
       })
+    },
+    openCellCardExplorerSearch: function (filters, query) {
+      this.drawerOpen = true
+      // Because refs are in v-for, nextTick is needed here
+      this.$nextTick(() => {
+        const cellCardExplorerTabRef = this.getTabRef(undefined, 'cellCardExplorer', true);
+        if (cellCardExplorerTabRef && typeof cellCardExplorerTabRef.openSearch === 'function') {
+          cellCardExplorerTabRef.openSearch(filters, query);
+        }
+      })
+    },
+    openDatasetSearchFromCellCard: function (payload) {
+      if (!payload || typeof payload !== 'object') {
+        this.openSearch([], payload);
+        return;
+      }
+
+      const facets = [];
+      if (payload.species) {
+        facets.push({
+          facet: payload.species,
+          term: 'Species',
+          facetPropPath: 'organisms.primary.species.name',
+        });
+      }
+
+      if (payload.location) {
+        facets.push({
+          facet: payload.location,
+          term: 'Anatomical structure',
+          facetPropPath: 'anatomy.organ.category.name',
+          AND: true,
+        });
+      }
+
+      this.openSearch(facets, '');
     },
     /**
      * Get the ref id of the tab by id and type.
@@ -501,7 +568,17 @@ export default {
         ...data,
       };
       this.$emit('trackEvent', taggingData);
-    }
+    },
+    /**
+     * @public
+     * Update the active species to use in filters.
+     * Used by SplitFlow component.
+     * @param activeSpecies
+     */
+    updateActiveSpeciesForEntries: function (activeSpecies) {
+      const speciesEntries = Array.isArray(activeSpecies) ? activeSpecies : [activeSpecies];
+      this.activeSpeciesForEntries = [...new Set(speciesEntries.filter(Boolean))];
+    },
   },
   computed: {
     // This should respect the information provided by the property
@@ -513,6 +590,10 @@ export default {
           tab.type === "annotation" &&
           this.annotationEntry &&
           this.annotationEntry.length > 0
+        ) ||
+        (
+          tab.type === "cellCardExplorer" &&
+          this.showCellCards
         )
       );
     },

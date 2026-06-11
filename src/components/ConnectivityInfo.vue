@@ -330,16 +330,12 @@ import {
   ExternalResourceCard,
 } from '@abi-software/map-utilities';
 import '@abi-software/map-utilities/dist/style.css';
+import { capitalise, formatAlertText as formatAlertTextUtil, scrollToRef } from '../utils/common.js'
 
 const titleCase = (str) => {
   return str.replace(/\w\S*/g, (t) => {
     return t.charAt(0).toUpperCase() + t.substr(1).toLowerCase()
   })
-}
-
-const capitalise = function (str) {
-  if (str) return str.charAt(0).toUpperCase() + str.slice(1)
-  return ''
 }
 
 export default {
@@ -933,49 +929,10 @@ export default {
       EventBus.emit('trackEvent', data);
     },
     showAlertMessage: function () {
-      // scroll to alert message
-      this.$nextTick(() => {
-        const alertElement = this.$refs.alertElement;
-        if (alertElement) {
-          alertElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-            inline: 'nearest',
-          });
-        }
-      });
+      scrollToRef(this, 'alertElement');
     },
     formatAlertText: function (text) {
-      if (!text) return '';
-      const escaped = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-      const linkified = escaped.replace(
-        /(https?:\/\/[^\s"<>\[]+)/g,
-        (url) => {
-          const parts = url.match(/^(.*?)([\].,;:!?]*)$/);
-          const cleanUrl = parts ? parts[1] : url;
-          const suffix = parts ? parts[2] : '';
-          return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${suffix}`;
-        }
-      );
-
-      const normalised = linkified
-        .replace(/\\n/g, '\n')
-        .replace(/\r\n/g, '\n')
-        .replace(/\r/g, '\n');
-
-      return normalised
-        .split('\n')
-        .map((line) => {
-          const withBoldLabel = line.replace(
-            /^\s*([A-Za-z][^:<]{0,120}:)/,
-            '<strong>$1</strong>'
-          );
-          return `<div class="alert-line">${withBoldLabel}</div>`;
-        })
-        .join('\n');
+      return formatAlertTextUtil(text, { formatLines: true });
     },
   },
   mounted: function () {

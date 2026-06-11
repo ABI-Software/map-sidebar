@@ -157,10 +157,7 @@ import '@abi-software/svg-sprite/dist/style.css'
 import { AlgoliaClient } from '../algolia/algolia.js'
 import { facetPropPathMapping } from '../algolia/utils.js'
 import EventBus from './EventBus.js'
-
-const capitalise = function (txt) {
-  return txt.charAt(0).toUpperCase() + txt.slice(1)
-}
+import { capitalise } from '../utils/common.js'
 
 const convertReadableLabel = function (original) {
   const name = original.toLowerCase()
@@ -288,18 +285,22 @@ export default {
       return value;
     },
     createChildrenCascaderValue: function(children, facet, facets) {
+      const parentKey = facet.key;
+
       if (children?.length) {
         for (let i = 0; i < children.length; i++) {
           const facetItem = children[i];
           //copy the facets into
           if (children[i].facetPropPath !== 'supportingAwards.consortium.name') {
-            children[i].label = convertReadableLabel(
-              facetItem.label
-            )
+            // `sourceNomenclatureLabel` is from cell card explorer filters
+            if (parentKey === 'sourceNomenclatureLabel') {
+              children[i].label = facetItem.label;
+            } else {
+              children[i].label = convertReadableLabel(facetItem.label);
+            }
           }
-          if (facetItem.key && facet.key.includes('flatmap.connectivity.source.')) {
+          if (facetItem.key && parentKey.includes('flatmap.connectivity.source.')) {
             const childKey = facetItem.key;
-            const parentKey = facet.key;
             const key = childKey.replace(`${parentKey}.`, '');
             children[i].value = this.createCascaderItemValue([facet.label, key]);
           } else {
