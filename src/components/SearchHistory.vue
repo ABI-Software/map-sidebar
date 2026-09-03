@@ -147,22 +147,9 @@ import {
 } from 'element-plus'
 
 import EventBus from './EventBus.js'
+import { generateUUID } from '../utils/common.js';
 
 const MAX_SEARCH_HISTORY = 12;
-
-function generateUUID() {
-  const arr = new Uint8Array(16);
-  window.crypto.getRandomValues(arr);
-
-  arr[6] = (arr[6] & 0x0f) | 0x40;
-  arr[8] = (arr[8] & 0x3f) | 0x80;
-
-  const hex = Array.from(arr)
-    .map(byte => byte.toString(16).padStart(2, '0'))
-    .join('');
-
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
 
 export default {
   name: 'SearchHistory',
@@ -347,7 +334,8 @@ export default {
     getParentComponentName: function () {
       const isConnectivity = this.localStorageKey?.indexOf('connectivity') !== -1;
       const isDataset = this.localStorageKey?.indexOf('dataset') !== -1;
-      const location = isConnectivity ? 'connectivity' : isDataset ? 'dataset' : '';
+      const isCellCard = this.localStorageKey?.indexOf('cell-card') !== -1;
+      const location = isConnectivity ? 'connectivity' : isDataset ? 'dataset' : isCellCard ? 'cell_card' : '';
       return location;
     },
     search: function (item) {

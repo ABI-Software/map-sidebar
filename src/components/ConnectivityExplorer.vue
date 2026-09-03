@@ -420,7 +420,7 @@ export default {
       this.openSearch([], '');
       this.$emit('search-changed', {
         value: [],
-        tabType: 'dataset',
+        tabType: 'connectivity',
         type: 'reset-update',
       })
 
@@ -468,7 +468,7 @@ export default {
         if (notFoundItems.length) {
           this.$emit('search-changed', {
             value: notFoundItems,
-            tabType: 'dataset',
+            tabType: 'connectivity',
             type: 'reset-update',
           })
         }
