@@ -812,8 +812,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '../assets/searchPopover.scss';
-@import '../assets/pagination.scss';
+@use '../assets/searchPopover.scss';
+@use '../assets/pagination.scss';
 
 .content-card {
   height: 100%;
