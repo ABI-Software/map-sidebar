@@ -361,6 +361,9 @@ export default {
             this.options = data;
             this.processOptions();
           })
+          .catch((error) => {
+            console.error('Failed to populate search filters:', error);
+          })
           .finally(() => {
             resolve();
           });
@@ -513,14 +516,23 @@ export default {
      */
     countTotalFacet: function (facet) {
       if (['anatomy.organ.category.name'].includes(facet.key)) {
-        const count = facet.children.reduce((total, num) => {
-          // The first 'total' will be an object
-          total = typeof total == 'number' ? total : total.children.length;
-          return total + num.children.length;
-        });
-        return count;
+        const childless = facet.children.filter((child) => !child.children?.length);
+        if (childless.length) {
+          this.warnChildlessCategories(facet, childless);
+        }
+        // A childless category is itself a leaf in the cascader, so count it as one
+        return facet.children.reduce((total, child) => total + (child.children?.length || 1), 0);
       }
       return facet.children.length;
+    },
+    /**
+     * Warn when a category has no sub-categories, which usually indicates
+     * an indexing/curation error in the Algolia data.
+     */
+    warnChildlessCategories: function (facet, childless) {
+      const names = childless.map((child) => child.label).join(', ');
+      const message = `${facet.label}: category without sub-categories found (${names}). This may indicate an indexing issue.`;
+      console.warn(message);
     },
     /**
      * When check/uncheck all child items, automatically check "Show all"
