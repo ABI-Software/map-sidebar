@@ -90,6 +90,7 @@
         @connectivity-search="onConnectivitySearch"
         @soma-location-hovered="showSomaLocation"
         @related-cell-click="onRelatedCellClick"
+        @cell-connectivity-search="onCellConnectivitySearch"
       />
       <el-pagination
         class="pagination"
@@ -107,15 +108,15 @@
 
 <script>
 import 'element-plus/es/components/message/style/css';
+import { ElMessage } from 'element-plus';
 import SearchFilters from './SearchFilters.vue';
 import SearchHistory from './SearchHistory.vue';
 import EventBus from './EventBus.js';
 import CellCard from './CellCard.vue';
-import { capitalise, generateUUID } from '../utils/common.js';
+import { capitalise } from '../utils/common.js';
+import { fetchCellPaths } from '../services/cellPrecisionQueries.js';
+import { loadCellCards } from '../services/cellCardsDataSource.js';
 import { MapSvgIcon } from '@abi-software/svg-sprite';
-
-let cachedCellCardsData = null;
-let pendingCellCardsRequest = null;
 
 export default {
   components: {
@@ -160,6 +161,15 @@ export default {
     };
   },
   computed: {
+    // Changes when the data source ('api' or 'json') or its URLs change.
+    cellCardsDataSourceKey: function () {
+      return [
+        this.envVars?.CELL_CARDS_DATA_SOURCE,
+        this.envVars?.CELL_CARDS_API,
+        this.envVars?.CELL_CARDS_SOURCE_ID,
+        this.envVars?.CELL_CARDS_JSON_API,
+      ].join('|');
+    },
     filterEntry: function () {
       return {
         numberOfHits: this.totalFilteredCount,
@@ -179,9 +189,14 @@ export default {
       immediate: true,
       handler: 'syncActiveSpeciesFilters',
     },
+    cellCardsDataSourceKey: function (newKey, oldKey) {
+      if (newKey !== oldKey) {
+        this.reloadCellTypes();
+      }
+    },
   },
   mounted: function () {
-    this.fetchCellTypes(this.envVars.CELL_CARDS_API);
+    this.fetchCellTypes();
   },
   methods: {
     syncCascaderFromActiveFilters: function () {
@@ -218,55 +233,41 @@ export default {
       this.applyFilters(this.activeFilters);
       this.emitSomaLocations(this.filterOptions);
     },
-    getCellCardsData: async function (url) {
-      if (cachedCellCardsData) {
-        return cachedCellCardsData;
-      }
+    fetchCellTypes: async function () {
+      const requestKey = this.cellCardsDataSourceKey;
+      this.loadingCards = true;
+      try {
+        const { cellTypes, genes } = await loadCellCards(this.envVars);
+        // Ignore the result if the data source changed while loading.
+        if (requestKey !== this.cellCardsDataSourceKey) return;
 
-      if (!pendingCellCardsRequest) {
-        pendingCellCardsRequest = fetch(url)
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then((data) => {
-            cachedCellCardsData = data;
-            return data;
-          })
-          .finally(() => {
-            pendingCellCardsRequest = null;
-          });
-      }
-
-      return pendingCellCardsRequest;
-    },
-    fetchCellTypes: async function (url) {
-      if (url) {
-        this.loadingCards = true;
-        try {
-          const data = await this.getCellCardsData(url);
-          if (data.DEFAULT_CELL_TYPES) {
-            const loadedCellTypes = data.DEFAULT_CELL_TYPES.map((cellType) => {
-              return {
-                ...cellType,
-                id: generateUUID(),
-              };
-            });
-
-            this.setGeneMappings(data.DEFAULT_GENES);
-            this.allCellTypes = loadedCellTypes;
-            this.filterOptions = this.buildFilterOptions(loadedCellTypes);
-            this.emitSomaLocations(this.filterOptions);
-            this.syncActiveSpeciesFilters();
-          }
-        } catch (error) {
-          console.error('Error fetching cell types:', error);
-        } finally {
+        this.setGeneMappings(cellTypes, genes);
+        this.allCellTypes = cellTypes;
+        this.filterOptions = this.buildFilterOptions(cellTypes);
+        this.emitSomaLocations(this.filterOptions);
+        this.syncActiveSpeciesFilters();
+      } catch (error) {
+        console.error('Error fetching cell types:', error);
+      } finally {
+        if (requestKey === this.cellCardsDataSourceKey) {
           this.loadingCards = false;
         }
       }
+    },
+    /**
+     * Reload the cards after the data source changes ('api' <-> 'json').
+     * Search and filters are kept; the open card and paging are reset.
+     */
+    reloadCellTypes: function () {
+      this.allCellTypes = [];
+      this.cellTypes = [];
+      this.filterOptions = [];
+      this.totalFilteredCount = 0;
+      this.activeCardId = null;
+      this.page = 1;
+      this.start = 0;
+      this.emitSomaLocations(this.filterOptions);
+      this.fetchCellTypes();
     },
     activateCard: function (cardId) {
       this.activeCardId = this.activeCardId === cardId ? null : cardId;
@@ -475,24 +476,38 @@ export default {
       }
       return normalized;
     },
-    setGeneMappings: function (genes) {
+    setGeneMappings: function (cellTypes, genes = null) {
       const baseToDisplay = {};
       const displayToBase = {};
 
-      (Array.isArray(genes) ? genes : []).forEach((gene) => {
-        const base = this.normalizeFacetValue(gene?.base);
-        const display = String(gene?.display || '').trim();
-        const normalizedDisplay = this.normalizeFacetValue(display);
+      // Demo JSON: use its DEFAULT_GENES list ({ base, display }).
+      if (Array.isArray(genes)) {
+        genes.forEach((gene) => {
+          const base = this.normalizeFacetValue(gene?.base);
+          const display = String(gene?.display || '').trim();
+          if (!base) return;
 
-        if (!base) return;
+          baseToDisplay[base] = display || base;
+          if (display) {
+            displayToBase[this.normalizeFacetValue(display)] = base;
+          }
+        });
 
-        if (display) {
+        this.geneBaseToDisplay = baseToDisplay;
+        this.geneDisplayToBase = displayToBase;
+        return;
+      }
+
+      // API: build the mapping from the marker genes of the cards.
+      (Array.isArray(cellTypes) ? cellTypes : []).forEach((cellType) => {
+        (cellType?.markerGenes || []).forEach((gene) => {
+          const display = String(gene?.name || '').trim();
+          const base = this.normalizeFacetValue(display);
+          if (!base || baseToDisplay[base]) return;
+
           baseToDisplay[base] = display;
-          displayToBase[normalizedDisplay] = base;
-          return;
-        }
-
-        baseToDisplay[base] = base;
+          displayToBase[base] = base;
+        });
       });
 
       this.geneBaseToDisplay = baseToDisplay;
@@ -511,11 +526,16 @@ export default {
         .join(' ');
 
       return [
+        cellType.id,
         cellType.preferredLabel,
         cellType.entity,
         cellType.species,
         (cellType.somaLocations || []).join(' '),
+        (cellType.sensoryTerminalLocations || []).join(' '),
+        (cellType.sensoryTerminalStructures || []).join(' '),
+        (cellType.axonTerminalLocations || []).join(' '),
         cellType.circuitRole,
+        cellType.neurotransmitter,
         cellType.creLine,
         cellType.geneExpressionString,
         cellType.fiberTypeString,
@@ -591,13 +611,22 @@ export default {
       const somaLocationOption = (filterOptions || []).find(
         (option) => option.key === 'somaLocations',
       );
-      const availableDataRaw = localStorage.getItem('available-name-curie-mapping');
-      const availableData = availableDataRaw ? JSON.parse(availableDataRaw) : {};
+      const availableData = this.getAvailableNameCurieMapping();
       const selectedSomaLocationFilters = this.getSelectedSomaLocationFilters();
       const shouldFilterBySelectedSomaLocations =
         (this.activeFilters || []).length > 0 && selectedSomaLocationFilters.length > 0;
       const selectedSomaLocationSet = new Set(selectedSomaLocationFilters);
       const filteredCellTypes = this.getFilteredCellTypes(this.activeFilters, this.searchInput);
+      // UBERON curies come from the API (query 35); localStorage lookup is only a fallback.
+      const somaLocationCuries = this.allCellTypes.reduce((curies, cellType) => {
+        (cellType?.somaLocationTerms || []).forEach((term) => {
+          const normalizedLabel = this.normalizeFacetValue(term?.label);
+          if (normalizedLabel && term?.curie && !curies.has(normalizedLabel)) {
+            curies.set(normalizedLabel, term.curie);
+          }
+        });
+        return curies;
+      }, new Map());
       const somaLocationCounts = filteredCellTypes.reduce((counts, cellType) => {
         (Array.isArray(cellType?.somaLocations) ? cellType.somaLocations : []).forEach(
           (location) => {
@@ -622,9 +651,11 @@ export default {
         })
         .map((label) => {
           const curie =
+            somaLocationCuries.get(label.toLowerCase()) ||
             Object.keys(availableData).find(
               (curie) => String(availableData[curie] || '').toLowerCase() === label.toLowerCase(),
-            ) || '';
+            ) ||
+            '';
 
           return {
             label,
@@ -638,6 +669,14 @@ export default {
       ];
 
       this.$emit('soma-locations-ready', uniqueSomaLocations);
+    },
+    getAvailableNameCurieMapping: function () {
+      try {
+        const availableDataRaw = localStorage.getItem('available-name-curie-mapping');
+        return availableDataRaw ? JSON.parse(availableDataRaw) : {};
+      } catch {
+        return {};
+      }
     },
     buildGeneFacetChildren: function (cellTypes) {
       const values = new Set();
@@ -777,6 +816,9 @@ export default {
 
       // Find the matching cell type by preferredLabel and open its card
       const matchingCellType = this.allCellTypes.find(function (ct) {
+        if (relatedCell.id) {
+          return ct.id === relatedCell.id;
+        }
         return (ct.preferredLabel || '').toLowerCase() === (label || '').toLowerCase();
       });
 
@@ -796,6 +838,65 @@ export default {
     },
     onConnectivitySearch: function (query) {
       this.$emit('connectivity-search', query);
+    },
+    /**
+     * q37 returns short path ids (e.g. "pain1:12") while connectivity ids are
+     * like "ilx:composer/uris/set/pain1/12", so search with "pain1/12".
+     * Full ilx/ilxtr ids are kept as they are.
+     */
+    toConnectivitySearchTerm: function (pathId) {
+      const id = String(pathId || '').trim();
+      if (id.startsWith('ilx:') || id.startsWith('ilxtr:')) {
+        return id;
+      }
+      return id.replace(/:/g, '/');
+    },
+    /**
+     * Open the connectivity explorer with the neuron populations
+     * that share nodes with a cell (query 37).
+     */
+    onCellConnectivitySearch: async function (cellType) {
+      const endpoint = this.envVars?.CELL_CARDS_API;
+      if (!endpoint || !cellType?.id) {
+        return;
+      }
+
+      try {
+        const { pathIds } = await fetchCellPaths(
+          endpoint,
+          this.envVars?.CELL_CARDS_SOURCE_ID,
+          cellType.id,
+        );
+
+        if (!pathIds.length) {
+          ElMessage({
+            message: `No neuron populations found for ${cellType.preferredLabel}.`,
+            type: 'info',
+            showClose: true,
+            duration: 3000,
+          });
+          return;
+        }
+
+        this.$emit('connectivity-search', {
+          facets: [],
+          query: pathIds.map((pathId) => this.toConnectivitySearchTerm(pathId)).join(', '),
+        });
+
+        EventBus.emit('trackEvent', {
+          event_name: `portal_maps_cell_card_connectivity_search`,
+          category: cellType.id,
+          location: 'map_sidebar_cell_card',
+        });
+      } catch (error) {
+        console.error('Error fetching neuron populations for cell:', error);
+        ElMessage({
+          message: 'Unable to load neuron populations for this cell type.',
+          type: 'error',
+          showClose: true,
+          duration: 3000,
+        });
+      }
     },
     getSearch: function () {
       return this.searchInput;

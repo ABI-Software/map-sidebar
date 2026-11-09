@@ -95,7 +95,7 @@
                     <button
                       type="button"
                       class="search-action-button"
-                      @click="openConnectivitySearch(location.name)"
+                      @click="openConnectivitySearch(location)"
                     >
                       Search connectivity
                     </button>
@@ -105,9 +105,24 @@
             </div>
           </div>
         </div>
+        <div v-if="hasTerminals" class="card-section">
+          <div class="card-section-title">Axon Terminals</div>
+          <div class="card-list-items">
+            <div v-for="terminal in terminals" class="card-list-item" :key="terminal.key">
+              <span>
+                {{ terminal.label }}
+                <span class="card-list-item-meta">({{ terminal.type }})</span>
+              </span>
+            </div>
+          </div>
+        </div>
         <div v-if="cellType.circuitRole" class="card-section">
           <div class="card-section-title">Circuit Role</div>
           <span>{{ cellType.circuitRole }}</span>
+        </div>
+        <div v-if="cellType.neurotransmitter" class="card-section">
+          <div class="card-section-title">Neurotransmitter</div>
+          <span>{{ cellType.neurotransmitter }}</span>
         </div>
         <div v-if="cellType.creLine" class="card-section">
           <div class="card-section-title">Cre Line</div>
@@ -138,10 +153,23 @@
           <div class="card-section-title">Physiology</div>
           <div class="card-section-content success">{{ cellType.physiologyString }}</div>
         </div>
+        <div v-if="cellType.cellId" class="card-section">
+          <div class="card-section-title">Neuron Populations</div>
+          <el-button
+            size="small"
+            class="neuron-populations-button"
+            @click.stop="openNeuronPopulationSearch"
+          >
+            Search related connectivity
+          </el-button>
+        </div>
         <div v-if="cellType.relatedCells?.length" class="card-section">
           <div class="card-section-title">Related Species Variants</div>
           <ul class="related-cell-list">
-            <li v-for="relatedCell in cellType.relatedCells" :key="relatedCell">
+            <li
+              v-for="relatedCell in cellType.relatedCells"
+              :key="relatedCell.id || relatedCell.label"
+            >
               <button
                 class="related-cell-item"
                 @click.stop="$emit('related-cell-click', relatedCell)"
@@ -209,11 +237,6 @@ import {
 } from '../utils/common.js';
 import IconOpenExternal from './icons/IconOpenExternal.vue';
 
-const LOCATION_ID_MAP = {
-  soma_tg: 'trigeminal ganglion',
-  soma_drg: 'dorsal root ganglion',
-};
-
 export default {
   name: 'CellCard',
   components: {
@@ -237,6 +260,7 @@ export default {
     'dataset-search',
     'connectivity-search',
     'related-cell-click',
+    'cell-connectivity-search',
   ],
   data() {
     return {
@@ -279,7 +303,11 @@ export default {
         entity,
         species,
         somaLocations,
+        sensoryTerminalLocations,
+        sensoryTerminalStructures,
+        axonTerminalLocations,
         circuitRole,
+        neurotransmitter,
         creLine,
         geneExpressionString,
         fiberTypeString,
@@ -305,8 +333,20 @@ export default {
         const items = somaLocations.map((location) => `<li>${location}</li>`).join('');
         contentArray.push(`<div><strong>Soma Locations:</strong><ul>${items}</ul></div>`);
       }
+      const terminalItems = [
+        ...(axonTerminalLocations || []).map((location) => `${location} (presynaptic)`),
+        ...(sensoryTerminalLocations || []).map((location) => `${location} (sensory)`),
+        ...(sensoryTerminalStructures || []).map((structure) => `${structure} (sensory structure)`),
+      ];
+      if (terminalItems.length) {
+        const items = terminalItems.map((item) => `<li>${item}</li>`).join('');
+        contentArray.push(`<div><strong>Axon Terminals:</strong><ul>${items}</ul></div>`);
+      }
       if (circuitRole) {
         contentArray.push(`<div><strong>Circuit Role:</strong> ${circuitRole}</div>`);
+      }
+      if (neurotransmitter) {
+        contentArray.push(`<div><strong>Neurotransmitter:</strong> ${neurotransmitter}</div>`);
       }
       if (creLine) {
         contentArray.push(`<div><strong>Cre Line:</strong> ${creLine}</div>`);
@@ -352,19 +392,42 @@ export default {
       return contentArray.join('\n');
     },
     somaLocations: function () {
-      const mappedLocations = this.cellType.somaLocations.map((location) => {
-        const locationKey =
-          Object.keys(LOCATION_ID_MAP).find((key) => LOCATION_ID_MAP[key] === location) || '';
-        const isClustered = this.cellType.clusterAttributes?.[locationKey];
-        if (isClustered) {
-          return {
-            name: capitalise(location),
-            id: locationKey,
-          };
-        }
-        return false;
-      });
-      return mappedLocations;
+      // Soma locations with UBERON curies from the API (query 35).
+      const terms = this.cellType.somaLocationTerms?.length
+        ? this.cellType.somaLocationTerms
+        : (this.cellType.somaLocations || []).map((label) => ({ label, curie: '' }));
+
+      return terms
+        .filter((term) => term?.label)
+        .map((term) => ({
+          name: capitalise(term.label),
+          label: term.label,
+          curie: term.curie || '',
+          id: term.curie || term.label,
+        }));
+    },
+    terminals: function () {
+      const terminals = [
+        ...(this.cellType.axonTerminalLocations || []).map((label) => ({
+          label,
+          type: 'presynaptic',
+        })),
+        ...(this.cellType.sensoryTerminalLocations || []).map((label) => ({
+          label,
+          type: 'sensory',
+        })),
+        ...(this.cellType.sensoryTerminalStructures || []).map((label) => ({
+          label,
+          type: 'sensory structure',
+        })),
+      ];
+      return terminals.map((terminal, index) => ({
+        ...terminal,
+        key: `${terminal.type}-${terminal.label}-${index}`,
+      }));
+    },
+    hasTerminals: function () {
+      return this.terminals.length > 0;
     },
   },
   methods: {
@@ -420,13 +483,26 @@ export default {
         location: query,
       });
     },
-    openConnectivitySearch: function (query) {
-      // Find the UBERON term from query value (label)
-      const availableDataRaw = localStorage.getItem('available-name-curie-mapping');
-      const availableData = availableDataRaw ? JSON.parse(availableDataRaw) : {};
-      const locationCurie = Object.keys(availableData).find(
-        (curie) => availableData[curie].toLowerCase() === query.toLowerCase(),
-      );
+    getLocationCurie: function (location) {
+      if (location?.curie) {
+        return location.curie;
+      }
+
+      // Fallback: find the UBERON term from the location label
+      const label = String(location?.label || location?.name || '').toLowerCase();
+      try {
+        const availableDataRaw = localStorage.getItem('available-name-curie-mapping');
+        const availableData = availableDataRaw ? JSON.parse(availableDataRaw) : {};
+        return Object.keys(availableData).find(
+          (curie) => String(availableData[curie] || '').toLowerCase() === label,
+        );
+      } catch {
+        return '';
+      }
+    },
+    openConnectivitySearch: function (location) {
+      const query = location?.name || '';
+      const locationCurie = this.getLocationCurie(location);
       const facets = locationCurie
         ? [
             {
@@ -441,6 +517,9 @@ export default {
         facets: facets,
         query: '',
       });
+    },
+    openNeuronPopulationSearch: function () {
+      this.$emit('cell-connectivity-search', this.cellType);
     },
     onSearchPopoverShow: function (locationId) {
       this.activeSearchPopoverLocationId = locationId;
@@ -656,6 +735,24 @@ export default {
   > span {
     line-height: 1.5em;
     font-weight: 500;
+  }
+}
+
+.card-list-item-meta {
+  color: #909399;
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.neuron-populations-button {
+  color: $app-primary-color;
+  border-color: $app-primary-color;
+
+  &:hover,
+  &:focus {
+    color: #fff;
+    background-color: $app-primary-color;
+    border-color: $app-primary-color;
   }
 }
 
