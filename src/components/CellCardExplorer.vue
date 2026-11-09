@@ -790,6 +790,18 @@ export default {
       this.$emit('connectivity-search', query);
     },
     /**
+     * q37 returns short path ids (e.g. "pain1:12") while connectivity ids are
+     * like "ilx:composer/uris/set/pain1/12", so search with "pain1/12".
+     * Full ilx/ilxtr ids are kept as they are.
+     */
+    toConnectivitySearchTerm: function (pathId) {
+      const id = String(pathId || '').trim();
+      if (id.startsWith('ilx:') || id.startsWith('ilxtr:')) {
+        return id;
+      }
+      return id.replace(/:/g, '/');
+    },
+    /**
      * Open the connectivity explorer with the neuron populations
      * that share nodes with a cell (query 37).
      */
@@ -818,7 +830,7 @@ export default {
 
         this.$emit('connectivity-search', {
           facets: [],
-          query: pathIds.join(', '),
+          query: pathIds.map((pathId) => this.toConnectivitySearchTerm(pathId)).join(', '),
         });
 
         EventBus.emit('trackEvent', {
