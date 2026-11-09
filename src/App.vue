@@ -136,6 +136,7 @@ export default {
         ROOT_URL: import.meta.env.VITE_ROOT_URL,
         FLATMAPAPI_LOCATION: import.meta.env.VITE_FLATMAPAPI_LOCATION,
         CELL_CARDS_API: import.meta.env.VITE_APP_CELL_CARDS_API,
+        CELL_CARDS_SOURCE_ID: import.meta.env.VITE_APP_CELL_CARDS_SOURCE_ID,
       },
       connectivityEntry: [],
       createData: {
