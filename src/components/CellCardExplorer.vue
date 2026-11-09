@@ -114,7 +114,8 @@ import SearchHistory from './SearchHistory.vue';
 import EventBus from './EventBus.js';
 import CellCard from './CellCard.vue';
 import { capitalise } from '../utils/common.js';
-import { fetchCellCards, fetchCellPaths } from '../services/cellPrecisionQueries.js';
+import { fetchCellPaths } from '../services/cellPrecisionQueries.js';
+import { loadCellCards } from '../services/cellCardsDataSource.js';
 import { MapSvgIcon } from '@abi-software/svg-sprite';
 
 export default {
@@ -160,6 +161,15 @@ export default {
     };
   },
   computed: {
+    // Changes when the data source ('api' or 'json') or its URLs change.
+    cellCardsDataSourceKey: function () {
+      return [
+        this.envVars?.CELL_CARDS_DATA_SOURCE,
+        this.envVars?.CELL_CARDS_API,
+        this.envVars?.CELL_CARDS_SOURCE_ID,
+        this.envVars?.CELL_CARDS_JSON_API,
+      ].join('|');
+    },
     filterEntry: function () {
       return {
         numberOfHits: this.totalFilteredCount,
@@ -178,6 +188,11 @@ export default {
       deep: true,
       immediate: true,
       handler: 'syncActiveSpeciesFilters',
+    },
+    cellCardsDataSourceKey: function (newKey, oldKey) {
+      if (newKey !== oldKey) {
+        this.reloadCellTypes();
+      }
     },
   },
   mounted: function () {
@@ -219,24 +234,40 @@ export default {
       this.emitSomaLocations(this.filterOptions);
     },
     fetchCellTypes: async function () {
-      const endpoint = this.envVars?.CELL_CARDS_API;
-      if (!endpoint) {
-        return;
-      }
-
+      const requestKey = this.cellCardsDataSourceKey;
       this.loadingCards = true;
       try {
-        const loadedCellTypes = await fetchCellCards(endpoint, this.envVars?.CELL_CARDS_SOURCE_ID);
-        this.setGeneMappings(loadedCellTypes);
-        this.allCellTypes = loadedCellTypes;
-        this.filterOptions = this.buildFilterOptions(loadedCellTypes);
+        const { cellTypes, genes } = await loadCellCards(this.envVars);
+        // Ignore the result if the data source changed while loading.
+        if (requestKey !== this.cellCardsDataSourceKey) return;
+
+        this.setGeneMappings(cellTypes, genes);
+        this.allCellTypes = cellTypes;
+        this.filterOptions = this.buildFilterOptions(cellTypes);
         this.emitSomaLocations(this.filterOptions);
         this.syncActiveSpeciesFilters();
       } catch (error) {
         console.error('Error fetching cell types:', error);
       } finally {
-        this.loadingCards = false;
+        if (requestKey === this.cellCardsDataSourceKey) {
+          this.loadingCards = false;
+        }
       }
+    },
+    /**
+     * Reload the cards after the data source changes ('api' <-> 'json').
+     * Search and filters are kept; the open card and paging are reset.
+     */
+    reloadCellTypes: function () {
+      this.allCellTypes = [];
+      this.cellTypes = [];
+      this.filterOptions = [];
+      this.totalFilteredCount = 0;
+      this.activeCardId = null;
+      this.page = 1;
+      this.start = 0;
+      this.emitSomaLocations(this.filterOptions);
+      this.fetchCellTypes();
     },
     activateCard: function (cardId) {
       this.activeCardId = this.activeCardId === cardId ? null : cardId;
@@ -445,10 +476,29 @@ export default {
       }
       return normalized;
     },
-    setGeneMappings: function (cellTypes) {
+    setGeneMappings: function (cellTypes, genes = null) {
       const baseToDisplay = {};
       const displayToBase = {};
 
+      // Demo JSON: use its DEFAULT_GENES list ({ base, display }).
+      if (Array.isArray(genes)) {
+        genes.forEach((gene) => {
+          const base = this.normalizeFacetValue(gene?.base);
+          const display = String(gene?.display || '').trim();
+          if (!base) return;
+
+          baseToDisplay[base] = display || base;
+          if (display) {
+            displayToBase[this.normalizeFacetValue(display)] = base;
+          }
+        });
+
+        this.geneBaseToDisplay = baseToDisplay;
+        this.geneDisplayToBase = displayToBase;
+        return;
+      }
+
+      // API: build the mapping from the marker genes of the cards.
       (Array.isArray(cellTypes) ? cellTypes : []).forEach((cellType) => {
         (cellType?.markerGenes || []).forEach((gene) => {
           const display = String(gene?.name || '').trim();

@@ -153,7 +153,7 @@
           <div class="card-section-title">Physiology</div>
           <div class="card-section-content success">{{ cellType.physiologyString }}</div>
         </div>
-        <div class="card-section">
+        <div v-if="cellType.cellId" class="card-section">
           <div class="card-section-title">Neuron Populations</div>
           <el-button
             size="small"
