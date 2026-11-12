@@ -202,12 +202,10 @@ export default {
         clearTimeout(this._debounceID);
         this._debounceID = 0;
       }
-      if (!this._debounceID) {
-        this._debounceID = setTimeout(() => {
-          const payload = data ? { ...data, tabType: 'dataset' } : { tabType: 'dataset' };
-          this.$emit('hover-changed', payload);
-        }, 200);
-      }
+      this._debounceID = setTimeout(() => {
+        const payload = data ? { ...data, tabType: 'dataset' } : { tabType: 'dataset' };
+        this.$emit('hover-changed', payload);
+      }, 200);
     },
     resetSearch: function () {
       this.numberOfHits = 0;
