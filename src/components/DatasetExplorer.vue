@@ -536,11 +536,11 @@ export default {
     //Create non-reactive local variables
     this.searchEndpoint = 'dataset_info/using_multiple_dois/';
   },
-  beforeUnmount: function() {
+  beforeUnmount: function () {
     if (this._debounceID) {
       clearTimeout(this._debounceID);
     }
-  }
+  },
 };
 </script>
 
