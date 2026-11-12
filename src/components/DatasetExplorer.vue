@@ -198,8 +198,14 @@ export default {
   },
   methods: {
     hoverChanged: function (data) {
-      const payload = data ? { ...data, tabType: 'dataset' } : { tabType: 'dataset' };
-      this.$emit('hover-changed', payload);
+      if (this._debounceID) {
+        clearTimeout(this._debounceID);
+        this._debounceID = 0;
+      }
+      this._debounceID = setTimeout(() => {
+        const payload = data ? { ...data, tabType: 'dataset' } : { tabType: 'dataset' };
+        this.$emit('hover-changed', payload);
+      }, 200);
     },
     resetSearch: function () {
       this.numberOfHits = 0;
@@ -527,6 +533,11 @@ export default {
   created: function () {
     //Create non-reactive local variables
     this.searchEndpoint = 'dataset_info/using_multiple_dois/';
+  },
+  beforeUnmount: function () {
+    if (this._debounceID) {
+      clearTimeout(this._debounceID);
+    }
   },
 };
 </script>
